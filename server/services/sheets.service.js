@@ -40,8 +40,29 @@ async function getSheetNames() {
 
   const allNames = response.data.sheets.map((s) => s.properties.title);
 
-  // Filtra apenas abas que começam com "CHAMADA" (ex: "CHAMADA 1", "CHAMADA 2", etc.)
-  return allNames.filter((name) => name.toUpperCase().startsWith('CHAMADA'));
+  // Filtra apenas abas que começam com "CHAMADA", excluindo as que começam com "CHAMADA GERAL"
+  return allNames.filter((name) => {
+    const upperName = name.toUpperCase();
+    return upperName.startsWith('CHAMADA') && !upperName.startsWith('CHAMADA GERAL');
+  });
+}
+
+/**
+ * Busca os nomes de todas as abas (sheets) que são de Chamada Geral
+ */
+async function getGeralSheetNames() {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+
+  const allNames = response.data.sheets.map((s) => s.properties.title);
+
+  // Filtra apenas abas que começam com "CHAMADA GERAL"
+  return allNames.filter((name) => name.toUpperCase().startsWith('CHAMADA GERAL'));
 }
 
 /**
@@ -238,9 +259,147 @@ async function addDateColumn(sheetName, dateStr) {
   };
 }
 
+/**
+ * Retorna dados da "CHAMADA GERAL"
+ * Estrutura: Linha 6 (index 5) = Disciplinas, Linha 7 (index 6) = P/F
+ */
+async function getGeralData(sheetName = 'CHAMADA GERAL') {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `'${sheetName}'`,
+  });
+
+  const rows = response.data.values || [];
+  
+  if (rows.length < 7) {
+    return { subjects: [], students: [] };
+  }
+
+  const subjectRow = rows[5] || [];
+  const typeRow = rows[6] || [];
+
+  const subjects = [];
+  const subjectColMap = {}; 
+
+  let currentSubject = null;
+  for (let c = 2; c < Math.max(subjectRow.length, typeRow.length); c++) {
+    const headerValue = (subjectRow[c] || '').trim();
+    if (headerValue) {
+      currentSubject = headerValue;
+      subjects.push(currentSubject);
+      subjectColMap[currentSubject] = {};
+    }
+
+    if (currentSubject) {
+      const typeValue = (typeRow[c] || '').trim().toUpperCase();
+      if (typeValue === 'P') subjectColMap[currentSubject].pIndex = c;
+      if (typeValue === 'F') subjectColMap[currentSubject].fIndex = c;
+    }
+  }
+
+  const students = [];
+
+  for (let i = 7; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const numCell = (row[0] || '').toString().trim();
+    const nameCell = (row[1] || '').trim();
+
+    if (!nameCell) continue;
+    if (!numCell || isNaN(parseInt(numCell, 10))) continue;
+
+    const skipWords = ['presenças', 'faltas', 'frequência', 'total'];
+    if (skipWords.some(w => nameCell.toLowerCase().includes(w))) continue;
+
+    const attendance = {};
+    
+    for (const subject of subjects) {
+      const map = subjectColMap[subject];
+      let pCount = 0;
+      let fCount = 0;
+      
+      if (map.pIndex !== undefined) {
+        const val = row[map.pIndex] || '0';
+        pCount = parseInt(val, 10) || 0;
+      }
+      if (map.fIndex !== undefined) {
+        const val = row[map.fIndex] || '0';
+        fCount = parseInt(val, 10) || 0;
+      }
+      
+      attendance[subject] = { P: pCount, F: fCount };
+    }
+
+    students.push({
+      id: numCell,
+      name: nameCell,
+      rowIndex: i + 1, 
+      attendance
+    });
+  }
+
+  return { subjects, students };
+}
+
+/**
+ * Atualiza presença/falta na "CHAMADA GERAL"
+ */
+async function updateGeralAttendance(sheetName, rowIndex, subjectName, type, newValue) {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `'${sheetName}'!A6:Z7`, 
+  });
+
+  const rows = response.data.values || [];
+  const subjectRow = rows[0] || [];
+  const typeRow = rows[1] || [];
+
+  let currentSubject = null;
+  let targetColIndex = -1;
+
+  for (let c = 2; c < Math.max(subjectRow.length, typeRow.length); c++) {
+    const headerValue = (subjectRow[c] || '').trim();
+    if (headerValue) currentSubject = headerValue;
+
+    if (currentSubject === subjectName) {
+      const typeValue = (typeRow[c] || '').trim().toUpperCase();
+      if (typeValue === type.toUpperCase()) {
+        targetColIndex = c;
+        break;
+      }
+    }
+  }
+
+  if (targetColIndex === -1) {
+    throw new Error(`Coluna para assunto "${subjectName}" e tipo "${type}" não encontrada.`);
+  }
+
+  const colLetter = columnIndexToLetter(targetColIndex);
+  const cellRange = `'${sheetName}'!${colLetter}${rowIndex}`;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: cellRange,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[newValue]],
+    },
+  });
+
+  return { success: true, message: `Atualizado ${cellRange} = ${newValue}` };
+}
+
 module.exports = {
   getSheetNames,
+  getGeralSheetNames,
   getAttendanceData,
   updateAttendance,
   addDateColumn,
+  getGeralData,
+  updateGeralAttendance
 };

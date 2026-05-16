@@ -109,4 +109,42 @@ const API = {
     if (!res.ok) throw new Error('Falha ao adicionar data');
     return res.json();
   },
+
+  /**
+   * Busca lista de abas da planilha para Chamada Geral
+   */
+  async fetchGeralSheets() {
+    const res = await fetch(`${this.BASE_URL}/geral-sheets`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao buscar turmas gerais');
+    return res.json();
+  },
+
+  /**
+   * Busca dados da "CHAMADA GERAL"
+   */
+  async fetchGeralData(sheetName = 'CHAMADA GERAL') {
+    const res = await fetch(`${this.BASE_URL}/geral/${encodeURIComponent(sheetName)}`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao buscar dados gerais');
+    return res.json();
+  },
+
+  /**
+   * Atualiza número (P/F) na "CHAMADA GERAL"
+   */
+  async updateGeralAttendance(data) {
+    const res = await fetch(`${this.BASE_URL}/geral`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: JSON.stringify(data),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao atualizar dados gerais');
+    return res.json();
+  }
 };

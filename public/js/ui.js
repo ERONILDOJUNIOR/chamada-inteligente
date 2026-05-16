@@ -23,6 +23,37 @@ const UI = {
     toastContainer: document.getElementById('toastContainer'),
     newDateInput: document.getElementById('newDateInput'),
     btnConfirmAddDate: document.getElementById('btnConfirmAddDate'),
+    
+    // Sidebar
+    btnToggleSidebar: document.getElementById('btnToggleSidebar'),
+    btnCloseSidebar: document.getElementById('btnCloseSidebar'),
+    sidebar: document.getElementById('sidebar'),
+    navDashboard: document.getElementById('navDashboard'),
+    navDiaria: document.getElementById('navDiaria'),
+    navGeral: document.getElementById('navGeral'),
+    btnLogout: document.getElementById('btnLogout'),
+    
+    // Views
+    viewDashboard: document.getElementById('viewDashboard'),
+    viewDiaria: document.getElementById('viewDiaria'),
+    viewGeral: document.getElementById('viewGeral'),
+    
+    // Dashboard Elements
+    dashDiarioSelector: document.getElementById('dashDiarioSelector'),
+    dashGeralSelector: document.getElementById('dashGeralSelector'),
+    chartDiarioCanvas: document.getElementById('chartDiario'),
+    chartEixosCanvas: document.getElementById('chartEixos'),
+    
+    // Geral Elements
+    geralSheetSelector: document.getElementById('geralSheetSelector'),
+    geralSubjectSelector: document.getElementById('geralSubjectSelector'),
+    geralSearchInput: document.getElementById('geralSearchInput'),
+    geralEmptyState: document.getElementById('geralEmptyState'),
+    geralLoadingState: document.getElementById('geralLoadingState'),
+    geralStudentList: document.getElementById('geralStudentList'),
+    geralErrorState: document.getElementById('geralErrorState'),
+    geralErrorMessage: document.getElementById('geralErrorMessage'),
+    geralBtnRetry: document.getElementById('geralBtnRetry'),
   },
 
   /**
@@ -213,4 +244,210 @@ const UI = {
     this.els.errorMessage.textContent = message;
     this.showState('error');
   },
+
+  // ==========================================
+  // Chamada Geral UI
+  // ==========================================
+
+  showGeralState(state) {
+    const { geralEmptyState, geralLoadingState, geralStudentList, geralErrorState } = this.els;
+    geralEmptyState.classList.toggle('d-none', state !== 'empty');
+    geralLoadingState.classList.toggle('d-none', state !== 'loading');
+    geralStudentList.classList.toggle('d-none', state !== 'list');
+    geralErrorState.classList.toggle('d-none', state !== 'error');
+  },
+
+  populateGeralSheets(sheets) {
+    const { geralSheetSelector } = this.els;
+    geralSheetSelector.innerHTML = '<option value="">Selecione a turma...</option>';
+    sheets.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      geralSheetSelector.appendChild(opt);
+    });
+    geralSheetSelector.disabled = false;
+  },
+
+  populateGeralSubjects(subjects) {
+    const { geralSubjectSelector, geralSearchInput } = this.els;
+    geralSubjectSelector.innerHTML = '<option value="">Selecione o eixo/disciplina...</option>';
+    subjects.forEach(sub => {
+      const opt = document.createElement('option');
+      opt.value = sub;
+      opt.textContent = sub;
+      geralSubjectSelector.appendChild(opt);
+    });
+    geralSubjectSelector.disabled = false;
+    geralSearchInput.disabled = false;
+  },
+
+  renderGeralStudents(students, subjectName) {
+    const { geralStudentList } = this.els;
+    geralStudentList.innerHTML = '';
+
+    students.forEach((student, i) => {
+      const att = student.attendance[subjectName] || { P: 0, F: 0 };
+      
+      const card = document.createElement('div');
+      card.className = 'student-card';
+      card.style.animationDelay = `${i * 0.04}s`;
+      card.dataset.rowIndex = student.rowIndex;
+      card.dataset.name = student.name.toLowerCase();
+
+      card.innerHTML = `
+        <div class="student-info" style="flex-wrap: wrap; gap: 16px;">
+          <div class="student-name-section" style="min-width: 200px; flex: 1;">
+            <div class="student-avatar">${this.getInitials(student.name)}</div>
+            <div>
+              <div class="student-name" title="${student.name}">${student.name}</div>
+              <div class="student-status">Eixo: ${subjectName}</div>
+            </div>
+          </div>
+          
+          <div class="geral-controls-group">
+            <div class="geral-counter">
+              <span class="geral-counter-label text-success">Presenças</span>
+              <div class="geral-counter-controls">
+                <button class="btn-counter btn-geral-action" data-action="decrement" data-type="P" data-row="${student.rowIndex}">-</button>
+                <span class="counter-value" id="val_P_${student.rowIndex}">${att.P}</span>
+                <button class="btn-counter btn-geral-action" data-action="increment" data-type="P" data-row="${student.rowIndex}">+</button>
+              </div>
+            </div>
+            <div class="geral-counter">
+              <span class="geral-counter-label text-danger">Faltas</span>
+              <div class="geral-counter-controls">
+                <button class="btn-counter btn-geral-action" data-action="decrement" data-type="F" data-row="${student.rowIndex}">-</button>
+                <span class="counter-value" id="val_F_${student.rowIndex}">${att.F}</span>
+                <button class="btn-counter btn-geral-action" data-action="increment" data-type="F" data-row="${student.rowIndex}">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      geralStudentList.appendChild(card);
+    });
+
+    this.showGeralState('list');
+  },
+
+  updateGeralCounterValue(row, type, value) {
+    const el = document.getElementById(`val_${type}_${row}`);
+    if (el) el.textContent = value;
+  },
+
+  filterGeralStudents(query) {
+    const cards = this.els.geralStudentList.querySelectorAll('.student-card');
+    const q = query.toLowerCase().trim();
+    cards.forEach(card => {
+      const name = card.dataset.name;
+      card.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+  },
+
+  // ==========================================
+  // Dashboard & Charts
+  // ==========================================
+  
+  charts: {
+    diario: null,
+    eixos: null,
+  },
+
+  populateDashSelectors(diarioSheets, geralSheets) {
+    const { dashDiarioSelector, dashGeralSelector } = this.els;
+    
+    dashDiarioSelector.innerHTML = '<option value="">Selecione a turma...</option>';
+    diarioSheets.forEach(name => {
+      dashDiarioSelector.appendChild(new Option(name, name));
+    });
+    dashDiarioSelector.disabled = false;
+
+    dashGeralSelector.innerHTML = '<option value="">Selecione a turma geral...</option>';
+    geralSheets.forEach(name => {
+      dashGeralSelector.appendChild(new Option(name, name));
+    });
+    dashGeralSelector.disabled = false;
+  },
+
+  renderChartDiario(labels, presentData, absentData) {
+    const ctx = this.els.chartDiarioCanvas.getContext('2d');
+    
+    if (this.charts.diario) {
+      this.charts.diario.destroy();
+    }
+
+    this.charts.diario = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Presenças',
+            data: presentData,
+            backgroundColor: '#3b82f6', // blue
+            borderRadius: 4,
+          },
+          {
+            label: 'Faltas',
+            data: absentData,
+            backgroundColor: '#ef4444', // red
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Montserrat' } } }
+        },
+        scales: {
+          y: { beginAtZero: true, stacked: false },
+          x: { stacked: false }
+        }
+      }
+    });
+  },
+
+  renderChartEixos(labels, presentData, absentData) {
+    const ctx = this.els.chartEixosCanvas.getContext('2d');
+    
+    if (this.charts.eixos) {
+      this.charts.eixos.destroy();
+    }
+
+    this.charts.eixos = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Presenças',
+            data: presentData,
+            backgroundColor: '#3b82f6', // blue
+            borderRadius: 4,
+          },
+          {
+            label: 'Faltas',
+            data: absentData,
+            backgroundColor: '#ef4444', // red
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y', // Barra horizontal para eixos
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Montserrat' } } }
+        },
+        scales: {
+          x: { beginAtZero: true }
+        }
+      }
+    });
+  }
 };

@@ -10,9 +10,20 @@
   // ============================================
   const state = {
     currentSheet: '',
-    headers: [],       // datas disponíveis
-    students: [],      // dados dos alunos
+    headers: [],       // datas disponíveis (Diária)
+    students: [],      // dados dos alunos (Diária)
     selectedDateIndex: -1,
+    
+    // Estado da Geral
+    geralSheets: [],
+    geralSheetName: '', // A aba atualmente selecionada
+    geralSubjects: [],
+    geralStudents: [],
+    currentSubject: '',
+
+    // Estado do Dashboard
+    dashDiarioSheets: [],
+    dashGeralSheets: []
   };
 
   // ============================================
@@ -121,13 +132,75 @@
   // ============================================
   async function init() {
     bindEvents();
-    await loadSheets();
+    // Inicia pelo Dashboard
+    UI.els.navDashboard.click();
   }
 
   // ============================================
   // Event Listeners
   // ============================================
   function bindEvents() {
+    
+    // ---- Navegação Sidebar ----
+    UI.els.btnToggleSidebar.addEventListener('click', () => {
+      UI.els.sidebar.classList.add('show');
+    });
+
+    UI.els.btnCloseSidebar.addEventListener('click', () => {
+      UI.els.sidebar.classList.remove('show');
+    });
+
+    UI.els.btnLogout.addEventListener('click', () => {
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('token_timestamp');
+      window.location.reload();
+    });
+
+    UI.els.navDashboard.addEventListener('click', () => {
+      UI.els.navDashboard.classList.add('active');
+      UI.els.navDiaria.classList.remove('active');
+      UI.els.navGeral.classList.remove('active');
+      
+      UI.els.viewDashboard.classList.remove('d-none');
+      UI.els.viewDiaria.classList.add('d-none');
+      UI.els.viewGeral.classList.add('d-none');
+      
+      UI.els.sidebar.classList.remove('show');
+      
+      if (state.dashDiarioSheets.length === 0 && state.dashGeralSheets.length === 0) {
+        loadDashboardData();
+      }
+    });
+
+    UI.els.navDiaria.addEventListener('click', () => {
+      UI.els.navDiaria.classList.add('active');
+      UI.els.navDashboard.classList.remove('active');
+      UI.els.navGeral.classList.remove('active');
+      
+      UI.els.viewDiaria.classList.remove('d-none');
+      UI.els.viewDashboard.classList.add('d-none');
+      UI.els.viewGeral.classList.add('d-none');
+      
+      UI.els.sidebar.classList.remove('show');
+      
+      if (!state.currentSheet) loadSheets();
+    });
+
+    UI.els.navGeral.addEventListener('click', () => {
+      UI.els.navGeral.classList.add('active');
+      UI.els.navDashboard.classList.remove('active');
+      UI.els.navDiaria.classList.remove('active');
+      
+      UI.els.viewGeral.classList.remove('d-none');
+      UI.els.viewDashboard.classList.add('d-none');
+      UI.els.viewDiaria.classList.add('d-none');
+      
+      UI.els.sidebar.classList.remove('show');
+
+      if (state.geralSheets.length === 0) {
+        loadGeralSheets();
+      }
+    });
     // Seleção de turma
     UI.els.sheetSelector.addEventListener('change', async (e) => {
       const sheetName = e.target.value;
@@ -221,11 +294,105 @@
       }
     });
 
-    // Retry button
+    // Retry button (Diária)
     UI.els.btnRetry.addEventListener('click', () => {
       sessionStorage.removeItem('access_token');
       sessionStorage.removeItem('token_timestamp');
       window.location.reload();
+    });
+
+    // ---- Eventos do Dashboard ----
+    UI.els.dashDiarioSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (sheetName) {
+        await renderChartDiarioForSheet(sheetName);
+      }
+    });
+
+    UI.els.dashGeralSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (sheetName) {
+        await renderChartEixosForSheet(sheetName);
+      }
+    });
+
+    // ---- Eventos da Chamada Geral ----
+    UI.els.geralSheetSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (!sheetName) {
+        UI.showGeralState('empty');
+        return;
+      }
+      state.geralSheetName = sheetName;
+      await loadGeralData(sheetName);
+    });
+
+    UI.els.geralSubjectSelector.addEventListener('change', (e) => {
+      const subject = e.target.value;
+      state.currentSubject = subject;
+      if (!subject) {
+        UI.showGeralState('empty');
+      } else {
+        UI.renderGeralStudents(state.geralStudents, subject);
+      }
+    });
+
+    UI.els.geralSearchInput.addEventListener('input', (e) => {
+      UI.filterGeralStudents(e.target.value);
+    });
+
+    UI.els.geralBtnRetry.addEventListener('click', () => {
+      if (state.geralSheetName) {
+        loadGeralData(state.geralSheetName);
+      } else {
+        loadGeralSheets();
+      }
+    });
+
+    // Clique nos botões +/- da Geral (delegação de eventos)
+    UI.els.geralStudentList.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn-geral-action');
+      if (!btn || btn.disabled) return;
+
+      const row = parseInt(btn.dataset.row, 10);
+      const type = btn.dataset.type; // "P" ou "F"
+      const action = btn.dataset.action; // "increment" ou "decrement"
+      const subject = state.currentSubject;
+
+      // Encontra aluno no estado local
+      const student = state.geralStudents.find(s => s.rowIndex === row);
+      if (!student) return;
+
+      let currentVal = student.attendance[subject] ? student.attendance[subject][type] : 0;
+      let newVal = action === 'increment' ? currentVal + 1 : currentVal - 1;
+      if (newVal < 0) newVal = 0; // Não permite negativo
+
+      if (newVal === currentVal) return;
+
+      // Feedback visual otimista
+      const prevVal = currentVal;
+      student.attendance[subject][type] = newVal;
+      UI.updateGeralCounterValue(row, type, newVal);
+      
+      btn.disabled = true;
+
+      try {
+        await API.updateGeralAttendance({
+          sheetName: state.geralSheetName,
+          rowIndex: row,
+          subjectName: subject,
+          type: type,
+          value: newVal
+        });
+        UI.showToast(`${type === 'P' ? 'Presença' : 'Falta'} atualizada!`);
+      } catch (err) {
+        // Reverte visual em caso de erro
+        student.attendance[subject][type] = prevVal;
+        UI.updateGeralCounterValue(row, type, prevVal);
+        UI.showToast('Erro ao atualizar.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
     });
   }
 
@@ -297,6 +464,149 @@
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
       UI.showError('Não foi possível carregar os dados de presença.');
+    }
+  }
+
+  // ============================================
+  // Carregamento de dados (Geral)
+  // ============================================
+  async function loadGeralSheets() {
+    try {
+      const data = await API.fetchGeralSheets();
+      if (data.success && data.sheets.length > 0) {
+        state.geralSheets = data.sheets;
+        UI.populateGeralSheets(data.sheets);
+        
+        // Auto seleciona a primeira aba
+        const targetSheet = data.sheets[0];
+        UI.els.geralSheetSelector.value = targetSheet;
+        state.geralSheetName = targetSheet;
+        await loadGeralData(targetSheet);
+      } else {
+        UI.showGeralState('error');
+        UI.els.geralErrorMessage.textContent = 'Nenhuma aba "Chamada Geral" encontrada.';
+      }
+    } catch (err) {
+      console.error('Erro ao carregar abas da Chamada Geral:', err);
+      UI.showGeralState('error');
+      UI.els.geralErrorMessage.textContent = 'Não foi possível conectar à planilha.';
+    }
+  }
+
+  async function loadGeralData(sheetName) {
+    UI.showGeralState('loading');
+    try {
+      const data = await API.fetchGeralData(sheetName);
+      if (!data.success) {
+        UI.showGeralState('error');
+        UI.els.geralErrorMessage.textContent = data.error || 'Erro desconhecido';
+        return;
+      }
+
+      state.geralSubjects = data.subjects;
+      state.geralStudents = data.students;
+
+      if (state.geralSubjects.length === 0) {
+        UI.showGeralState('error');
+        UI.els.geralErrorMessage.textContent = 'Nenhuma disciplina encontrada na aba CHAMADA GERAL.';
+        return;
+      }
+
+      UI.populateGeralSubjects(state.geralSubjects);
+      
+      // Auto-seleciona a primeira disciplina se não houver seleção
+      if (!state.currentSubject) {
+        state.currentSubject = state.geralSubjects[0];
+        UI.els.geralSubjectSelector.value = state.currentSubject;
+      }
+      
+      UI.renderGeralStudents(state.geralStudents, state.currentSubject);
+
+    } catch (err) {
+      console.error('Erro ao carregar dados gerais:', err);
+      UI.showGeralState('error');
+      UI.els.geralErrorMessage.textContent = 'Falha ao conectar ou processar os dados da Chamada Geral.';
+    }
+  }
+
+  // ============================================
+  // Dashboard & Gráficos
+  // ============================================
+  async function loadDashboardData() {
+    try {
+      // Fetch available sheets for both contexts in parallel
+      const [diarioRes, geralRes] = await Promise.all([
+        API.fetchSheets(),
+        API.fetchGeralSheets()
+      ]);
+
+      if (diarioRes.success) state.dashDiarioSheets = diarioRes.sheets;
+      if (geralRes.success) state.dashGeralSheets = geralRes.sheets;
+
+      UI.populateDashSelectors(state.dashDiarioSheets, state.dashGeralSheets);
+
+      // Render initial charts if sheets are available
+      if (state.dashDiarioSheets.length > 0) {
+        UI.els.dashDiarioSelector.value = state.dashDiarioSheets[0];
+        await renderChartDiarioForSheet(state.dashDiarioSheets[0]);
+      }
+      
+      if (state.dashGeralSheets.length > 0) {
+        UI.els.dashGeralSelector.value = state.dashGeralSheets[0];
+        await renderChartEixosForSheet(state.dashGeralSheets[0]);
+      }
+
+    } catch (err) {
+      console.error('Erro ao carregar dados do Dashboard', err);
+      UI.showToast('Erro ao carregar turmas para o Dashboard', 'error');
+    }
+  }
+
+  async function renderChartDiarioForSheet(sheetName) {
+    try {
+      const data = await API.fetchAttendance(sheetName);
+      if (!data.success) return;
+
+      const labels = data.headers; // As datas
+      const presentData = new Array(labels.length).fill(0);
+      const absentData = new Array(labels.length).fill(0);
+
+      data.students.forEach(student => {
+        labels.forEach((dateKey, index) => {
+          const val = student.attendance[dateKey];
+          if (val === 'P') presentData[index]++;
+          if (val === 'F') absentData[index]++;
+        });
+      });
+
+      UI.renderChartDiario(labels, presentData, absentData);
+    } catch (err) {
+      console.error('Erro ao renderizar gráfico diário', err);
+    }
+  }
+
+  async function renderChartEixosForSheet(sheetName) {
+    try {
+      const data = await API.fetchGeralData(sheetName);
+      if (!data.success) return;
+
+      const labels = data.subjects; // Os eixos
+      const presentData = new Array(labels.length).fill(0);
+      const absentData = new Array(labels.length).fill(0);
+
+      data.students.forEach(student => {
+        labels.forEach((subject, index) => {
+          const val = student.attendance[subject];
+          if (val) {
+            presentData[index] += val.P || 0;
+            absentData[index] += val.F || 0;
+          }
+        });
+      });
+
+      UI.renderChartEixos(labels, presentData, absentData);
+    } catch (err) {
+      console.error('Erro ao renderizar gráfico de eixos', err);
     }
   }
 

@@ -107,4 +107,75 @@ router.post('/attendance/add-date', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/geral-sheets
+ * Lista todas as abas disponíveis para Chamada Geral
+ */
+router.get('/geral-sheets', async (req, res) => {
+  try {
+    const sheetNames = await sheetsService.getGeralSheetNames();
+    res.json({ success: true, sheets: sheetNames });
+  } catch (error) {
+    console.error('Erro ao buscar abas gerais:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível buscar as abas de chamada geral.',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/geral/:sheetName
+ * Retorna dados da aba Geral
+ */
+router.get('/geral/:sheetName', async (req, res) => {
+  try {
+    const { sheetName } = req.params;
+    const data = await sheetsService.getGeralData(sheetName);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    console.error('Erro ao buscar dados da chamada geral:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível buscar os dados.',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/geral
+ * Atualiza um valor numérico de P ou F para uma disciplina
+ */
+router.post('/geral', async (req, res) => {
+  try {
+    const { sheetName, rowIndex, subjectName, type, value } = req.body;
+
+    if (!sheetName || !rowIndex || !subjectName || !type || value === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Campos obrigatórios: sheetName, rowIndex, subjectName, type, value',
+      });
+    }
+
+    const result = await sheetsService.updateGeralAttendance(
+      sheetName,
+      Number(rowIndex),
+      subjectName,
+      type,
+      Number(value)
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error('Erro ao atualizar chamada geral:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível salvar.',
+      details: error.message,
+    });
+  }
+});
+
 module.exports = router;
