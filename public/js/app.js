@@ -223,11 +223,9 @@
 
     // Retry button
     UI.els.btnRetry.addEventListener('click', () => {
-      if (state.currentSheet) {
-        loadAttendanceData(state.currentSheet);
-      } else {
-        loadSheets();
-      }
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('token_timestamp');
+      window.location.reload();
     });
   }
 
