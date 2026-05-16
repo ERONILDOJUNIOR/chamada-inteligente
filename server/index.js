@@ -34,7 +34,8 @@ app.get('/api/config', (req, res) => {
 // ============================================
 // Tokens válidos em memória
 // ============================================
-const validTokens = new Set();
+const validTokens = new Map();
+const SESSION_DURATION_MS = 30 * 60 * 1000; // 30 minutos
 
 // ============================================
 // Rota de autenticação (não protegida)
@@ -49,7 +50,7 @@ app.post('/api/auth', (req, res) => {
 
   if (code === accessCode) {
     const token = crypto.randomBytes(32).toString('hex');
-    validTokens.add(token);
+    validTokens.set(token, Date.now() + SESSION_DURATION_MS);
     return res.json({ success: true, token });
   }
 
@@ -65,9 +66,15 @@ app.use('/api', (req, res, next) => {
     return res.status(401).json({ success: false, error: 'Token de acesso não fornecido.' });
   }
   const token = authHeader.split(' ')[1];
-  if (!validTokens.has(token)) {
-    return res.status(401).json({ success: false, error: 'Token de acesso inválido.' });
+  const expiresAt = validTokens.get(token);
+  if (!expiresAt || Date.now() > expiresAt) {
+    if (expiresAt) validTokens.delete(token); // Limpa token expirado
+    return res.status(401).json({ success: false, error: 'Sessão expirada. Faça login novamente.' });
   }
+  
+  // Opcional: Renovar o tempo a cada ação (inativity timeout)
+  // validTokens.set(token, Date.now() + SESSION_DURATION_MS);
+  
   next();
 });
 

@@ -36,10 +36,23 @@ const API = {
     const data = await res.json();
     if (data.success && data.token) {
       this._token = data.token;
-      // Salva token na sessão (dura enquanto a aba estiver aberta)
+      // Salva token na sessão (dura enquanto a aba estiver aberta ou 30 min)
       sessionStorage.setItem('access_token', data.token);
+      sessionStorage.setItem('token_timestamp', Date.now().toString());
     }
     return data;
+  },
+
+  /**
+   * Verifica se a resposta foi 401 (Não Autorizado) e desloga se necessário
+   */
+  _checkAuth(res) {
+    if (res.status === 401) {
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('token_timestamp');
+      window.location.reload();
+      throw new Error('Sessão expirada');
+    }
   },
 
   /**
@@ -49,6 +62,7 @@ const API = {
     const res = await fetch(`${this.BASE_URL}/sheets`, {
       headers: this._authHeaders(),
     });
+    this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao buscar turmas');
     return res.json();
   },
@@ -61,6 +75,7 @@ const API = {
     const res = await fetch(`${this.BASE_URL}/attendance/${encodeURIComponent(sheetName)}`, {
       headers: this._authHeaders(),
     });
+    this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao buscar dados de presença');
     return res.json();
   },
@@ -75,6 +90,7 @@ const API = {
       headers: this._authHeaders(),
       body: JSON.stringify(data),
     });
+    this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao salvar presença');
     return res.json();
   },
@@ -89,6 +105,7 @@ const API = {
       headers: this._authHeaders(),
       body: JSON.stringify(data),
     });
+    this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao adicionar data');
     return res.json();
   },

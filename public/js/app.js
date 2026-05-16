@@ -30,14 +30,36 @@
   // ============================================
   function boot() {
     const savedToken = sessionStorage.getItem('access_token');
-    if (savedToken) {
-      // Tenta usar o token salvo
-      API.setToken(savedToken);
-      unlockApp();
+    const savedTimestamp = sessionStorage.getItem('token_timestamp');
+
+    if (savedToken && savedTimestamp) {
+      const elapsed = Date.now() - parseInt(savedTimestamp, 10);
+      const THIRTY_MINUTES = 30 * 60 * 1000;
+
+      if (elapsed < THIRTY_MINUTES) {
+        // Token ainda dentro da validade
+        API.setToken(savedToken);
+        unlockApp();
+        scheduleLogout(THIRTY_MINUTES - elapsed);
+      } else {
+        // Expirado
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('token_timestamp');
+        bindLoginEvents();
+      }
     } else {
       // Mostra tela de login
       bindLoginEvents();
     }
+  }
+
+  function scheduleLogout(timeMs) {
+    setTimeout(() => {
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('token_timestamp');
+      alert('Sua sessão expirou. Por favor, insira o código novamente.');
+      window.location.reload();
+    }, timeMs);
   }
 
   // ============================================
@@ -58,6 +80,7 @@
       try {
         const result = await API.authenticate(code);
         if (result.success) {
+          scheduleLogout(30 * 60 * 1000);
           unlockApp();
         } else {
           showLoginError(result.error || 'Código inválido.');
