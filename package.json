@@ -1,0 +1,22 @@
+{
+  "name": "chamada-inteligente",
+  "version": "1.0.0",
+  "description": "Sistema de Chamada Inteligente integrado ao Google Sheets",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "keywords": ["attendance", "google-sheets", "express"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
