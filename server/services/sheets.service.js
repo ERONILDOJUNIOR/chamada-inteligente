@@ -394,6 +394,111 @@ async function updateGeralAttendance(sheetName, rowIndex, subjectName, type, new
   return { success: true, message: `Atualizado ${cellRange} = ${newValue}` };
 }
 
+/**
+ * Busca abas de Financeiro
+ */
+async function getFinanceiroSheetNames() {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+
+  const allNames = response.data.sheets.map((s) => s.properties.title);
+  return allNames.filter((name) => name.toUpperCase().includes('FINANCEIRO'));
+}
+
+/**
+ * Lê todos os dados de uma aba de Financeiro
+ */
+async function getFinanceiroData(sheetName) {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `'${sheetName}'`,
+  });
+
+  const rows = response.data.values || [];
+
+  if (rows.length < 2) {
+    return { months: [], students: [] };
+  }
+
+  // Linha 1 (index 0) contém os meses a partir da coluna 5 (F)
+  const monthRow = rows[0] || [];
+  const months = [];
+  const monthColMap = {}; // Ex: { 'MAR': 5, 'ABR': 6 }
+
+  for (let c = 5; c < monthRow.length; c++) {
+    const monthValue = (monthRow[c] || '').trim();
+    if (monthValue) {
+      months.push(monthValue);
+      monthColMap[monthValue] = c;
+    }
+  }
+
+  const students = [];
+
+  for (let i = 2; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const numCell = (row[0] || '').toString().trim();
+    const nameCell = (row[1] || '').trim();
+    const perfilCell = (row[2] || '').trim();
+    const valorCell = (row[3] || '').trim();
+    const dataVencimentoCell = (row[4] || '').trim();
+
+    if (!nameCell) continue;
+    if (!numCell || isNaN(parseInt(numCell, 10))) continue;
+
+    const skipWords = ['presenças', 'faltas', 'frequência', 'total'];
+    if (skipWords.some(w => nameCell.toLowerCase().includes(w))) continue;
+
+    const pagamentos = {};
+    for (const month of months) {
+      const colIdx = monthColMap[month];
+      pagamentos[month] = (row[colIdx] || '').trim();
+    }
+
+    students.push({
+      id: numCell,
+      name: nameCell,
+      perfil: perfilCell,
+      valor: valorCell,
+      dataVencimento: dataVencimentoCell,
+      rowIndex: i + 1, // Google sheets 1-based
+      pagamentos
+    });
+  }
+
+  return { months, monthColMap, students };
+}
+
+/**
+ * Atualiza um campo no Financeiro (Data ou Data Pg)
+ */
+async function updateFinanceiroField(sheetName, rowIndex, colIndex, value) {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const colLetter = columnIndexToLetter(colIndex);
+  const cellRange = `'${sheetName}'!${colLetter}${rowIndex}`;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: cellRange,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[value]],
+    },
+  });
+
+  return { success: true, message: `Atualizado ${cellRange} = ${value}` };
+}
+
 module.exports = {
   getSheetNames,
   getGeralSheetNames,
@@ -401,5 +506,8 @@ module.exports = {
   updateAttendance,
   addDateColumn,
   getGeralData,
-  updateGeralAttendance
+  updateGeralAttendance,
+  getFinanceiroSheetNames,
+  getFinanceiroData,
+  updateFinanceiroField
 };

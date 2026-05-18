@@ -37,6 +37,8 @@ const UI = {
     viewDashboard: document.getElementById('viewDashboard'),
     viewDiaria: document.getElementById('viewDiaria'),
     viewGeral: document.getElementById('viewGeral'),
+    viewFinanceiro: document.getElementById('viewFinanceiro'),
+    navFinanceiro: document.getElementById('navFinanceiro'),
     
     // Dashboard Elements
     dashDiarioSelector: document.getElementById('dashDiarioSelector'),
@@ -54,6 +56,16 @@ const UI = {
     geralErrorState: document.getElementById('geralErrorState'),
     geralErrorMessage: document.getElementById('geralErrorMessage'),
     geralBtnRetry: document.getElementById('geralBtnRetry'),
+
+    // Financeiro Elements
+    financeiroSheetSelector: document.getElementById('financeiroSheetSelector'),
+    financeiroSearchInput: document.getElementById('financeiroSearchInput'),
+    financeiroEmptyState: document.getElementById('financeiroEmptyState'),
+    financeiroLoadingState: document.getElementById('financeiroLoadingState'),
+    financeiroStudentList: document.getElementById('financeiroStudentList'),
+    financeiroErrorState: document.getElementById('financeiroErrorState'),
+    financeiroErrorMessage: document.getElementById('financeiroErrorMessage'),
+    financeiroBtnRetry: document.getElementById('financeiroBtnRetry'),
   },
 
   /**
@@ -448,6 +460,110 @@ const UI = {
           x: { beginAtZero: true }
         }
       }
+    });
+  },
+
+  // ==========================================
+  // Financeiro UI
+  // ==========================================
+
+  showFinanceiroState(state) {
+    const { financeiroEmptyState, financeiroLoadingState, financeiroStudentList, financeiroErrorState } = this.els;
+    financeiroEmptyState.classList.toggle('d-none', state !== 'empty');
+    financeiroLoadingState.classList.toggle('d-none', state !== 'loading');
+    financeiroStudentList.classList.toggle('d-none', state !== 'list');
+    financeiroErrorState.classList.toggle('d-none', state !== 'error');
+  },
+
+  populateFinanceiroSheets(sheets) {
+    const { financeiroSheetSelector } = this.els;
+    financeiroSheetSelector.innerHTML = '<option value="">Selecione a turma...</option>';
+    sheets.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      financeiroSheetSelector.appendChild(opt);
+    });
+    financeiroSheetSelector.disabled = false;
+  },
+
+  renderFinanceiroStudents(students, months, monthColMap) {
+    const { financeiroStudentList, financeiroSearchInput } = this.els;
+    financeiroStudentList.innerHTML = '';
+
+    // Função auxiliar para converter DD/MM/YY(YY) para YYYY-MM-DD
+    const parseDateForInput = (sheetDateStr) => {
+      if (!sheetDateStr) return '';
+      const parts = sheetDateStr.split('/');
+      if (parts.length === 3) {
+        let day = parts[0].padStart(2, '0');
+        let month = parts[1].padStart(2, '0');
+        let year = parts[2];
+        if (year.length === 2) year = '20' + year;
+        return `${year}-${month}-${day}`;
+      }
+      return ''; // Se não for data válida, deixa vazio para o input date
+    };
+
+    students.forEach((student, i) => {
+      const card = document.createElement('div');
+      card.className = 'student-card';
+      card.style.animationDelay = `${i * 0.04}s`;
+      card.dataset.rowIndex = student.rowIndex;
+      card.dataset.name = student.name.toLowerCase();
+
+      // Monta os inputs de meses
+      let monthsHtml = '';
+      months.forEach(month => {
+        const colIdx = monthColMap[month];
+        const val = student.pagamentos[month] || '';
+        const dateVal = parseDateForInput(val);
+        
+        monthsHtml += `
+          <div class="financeiro-month-input" style="display: flex; flex-direction: column; align-items: center;">
+            <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">${month}</label>
+            <input type="date" class="form-control glass-input financeiro-input" 
+                   data-type="pagamento" data-row="${student.rowIndex}" data-col="${colIdx}" 
+                   value="${dateVal}" style="padding: 4px; font-size: 0.85rem;">
+          </div>
+        `;
+      });
+
+      card.innerHTML = `
+        <div class="student-info" style="flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+          <div class="student-name-section" style="min-width: 200px; flex: 1;">
+            <div class="student-avatar">${this.getInitials(student.name)}</div>
+            <div>
+              <div class="student-name" title="${student.name}">${student.name}</div>
+              <div class="student-status" style="font-size: 0.85rem;">Perfil: ${student.perfil} | Valor: ${student.valor}</div>
+            </div>
+          </div>
+          
+          <div class="financeiro-controls" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: flex-end; flex: 2;">
+            <div class="financeiro-month-input" style="display: flex; flex-direction: column; align-items: center; width: 60px;">
+              <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Venc.</label>
+              <input type="number" class="form-control glass-input financeiro-input" 
+                     data-type="vencimento" data-row="${student.rowIndex}" data-col="4" 
+                     value="${student.dataVencimento}" placeholder="Dia" style="text-align: center; padding: 4px; font-size: 0.85rem;" min="1" max="31">
+            </div>
+            ${monthsHtml}
+          </div>
+        </div>
+      `;
+
+      financeiroStudentList.appendChild(card);
+    });
+
+    financeiroSearchInput.disabled = false;
+    this.showFinanceiroState('list');
+  },
+
+  filterFinanceiroStudents(query) {
+    const cards = this.els.financeiroStudentList.querySelectorAll('.student-card');
+    const q = query.toLowerCase().trim();
+    cards.forEach(card => {
+      const name = card.dataset.name;
+      card.style.display = !q || name.includes(q) ? '' : 'none';
     });
   }
 };

@@ -23,7 +23,14 @@
 
     // Estado do Dashboard
     dashDiarioSheets: [],
-    dashGeralSheets: []
+    dashGeralSheets: [],
+
+    // Estado Financeiro
+    financeiroSheets: [],
+    financeiroSheetName: '',
+    financeiroMonths: [],
+    financeiroMonthColMap: {},
+    financeiroStudents: []
   };
 
   // ============================================
@@ -77,6 +84,23 @@
   // Login Gate
   // ============================================
   function bindLoginEvents() {
+    const btnTogglePassword = document.getElementById('btnTogglePassword');
+    if (btnTogglePassword) {
+      btnTogglePassword.addEventListener('click', () => {
+        const type = accessCodeInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        accessCodeInput.setAttribute('type', type);
+        
+        const icon = btnTogglePassword.querySelector('i');
+        if (type === 'text') {
+          icon.classList.remove('bi-eye-fill');
+          icon.classList.add('bi-eye-slash-fill');
+        } else {
+          icon.classList.remove('bi-eye-slash-fill');
+          icon.classList.add('bi-eye-fill');
+        }
+      });
+    }
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const code = accessCodeInput.value.trim();
@@ -160,10 +184,12 @@
       UI.els.navDashboard.classList.add('active');
       UI.els.navDiaria.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
+      UI.els.navFinanceiro.classList.remove('active');
       
       UI.els.viewDashboard.classList.remove('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
+      UI.els.viewFinanceiro.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -176,10 +202,12 @@
       UI.els.navDiaria.classList.add('active');
       UI.els.navDashboard.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
+      UI.els.navFinanceiro.classList.remove('active');
       
       UI.els.viewDiaria.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
+      UI.els.viewFinanceiro.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -190,10 +218,12 @@
       UI.els.navGeral.classList.add('active');
       UI.els.navDashboard.classList.remove('active');
       UI.els.navDiaria.classList.remove('active');
+      UI.els.navFinanceiro.classList.remove('active');
       
       UI.els.viewGeral.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewDiaria.classList.add('d-none');
+      UI.els.viewFinanceiro.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -201,6 +231,25 @@
         loadGeralSheets();
       }
     });
+
+    UI.els.navFinanceiro.addEventListener('click', () => {
+      UI.els.navFinanceiro.classList.add('active');
+      UI.els.navDashboard.classList.remove('active');
+      UI.els.navDiaria.classList.remove('active');
+      UI.els.navGeral.classList.remove('active');
+      
+      UI.els.viewFinanceiro.classList.remove('d-none');
+      UI.els.viewDashboard.classList.add('d-none');
+      UI.els.viewDiaria.classList.add('d-none');
+      UI.els.viewGeral.classList.add('d-none');
+      
+      UI.els.sidebar.classList.remove('show');
+
+      if (state.financeiroSheets.length === 0) {
+        loadFinanceiroSheets();
+      }
+    });
+
     // Seleção de turma
     UI.els.sheetSelector.addEventListener('change', async (e) => {
       const sheetName = e.target.value;
@@ -394,6 +443,65 @@
         btn.disabled = false;
       }
     });
+
+    // ---- Eventos Financeiro ----
+    UI.els.financeiroSheetSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (!sheetName) {
+        UI.showFinanceiroState('empty');
+        return;
+      }
+      state.financeiroSheetName = sheetName;
+      await loadFinanceiroData(sheetName);
+    });
+
+    UI.els.financeiroSearchInput.addEventListener('input', (e) => {
+      UI.filterFinanceiroStudents(e.target.value);
+    });
+
+    UI.els.financeiroBtnRetry.addEventListener('click', () => {
+      if (state.financeiroSheetName) {
+        loadFinanceiroData(state.financeiroSheetName);
+      } else {
+        loadFinanceiroSheets();
+      }
+    });
+
+    // Inputs do Financeiro (change para salvar)
+    UI.els.financeiroStudentList.addEventListener('change', async (e) => {
+      if (!e.target.classList.contains('financeiro-input')) return;
+
+      const input = e.target;
+      const row = parseInt(input.dataset.row, 10);
+      const col = parseInt(input.dataset.col, 10);
+      let value = input.value;
+      const type = input.dataset.type;
+
+      // Se for uma data (pagamento), converte de YYYY-MM-DD para DD/MM/YYYY
+      if (type === 'pagamento' && value) {
+        const parts = value.split('-');
+        if (parts.length === 3) {
+          value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+      }
+
+      input.disabled = true;
+
+      try {
+        await API.updateFinanceiroField({
+          sheetName: state.financeiroSheetName,
+          rowIndex: row,
+          colIndex: col,
+          value: value
+        });
+        
+        UI.showToast('Dado financeiro atualizado!');
+      } catch (err) {
+        UI.showToast('Erro ao atualizar financeiro.', 'error');
+      } finally {
+        input.disabled = false;
+      }
+    });
   }
 
   // ============================================
@@ -526,6 +634,60 @@
       console.error('Erro ao carregar dados gerais:', err);
       UI.showGeralState('error');
       UI.els.geralErrorMessage.textContent = 'Falha ao conectar ou processar os dados da Chamada Geral.';
+    }
+  }
+
+  // ============================================
+  // Carregamento de dados (Financeiro)
+  // ============================================
+  async function loadFinanceiroSheets() {
+    try {
+      const data = await API.fetchFinanceiroSheets();
+      if (data.success && data.sheets.length > 0) {
+        state.financeiroSheets = data.sheets;
+        UI.populateFinanceiroSheets(data.sheets);
+        
+        const targetSheet = data.sheets[0];
+        UI.els.financeiroSheetSelector.value = targetSheet;
+        state.financeiroSheetName = targetSheet;
+        await loadFinanceiroData(targetSheet);
+      } else {
+        UI.showFinanceiroState('error');
+        UI.els.financeiroErrorMessage.textContent = 'Nenhuma aba de Financeiro encontrada.';
+      }
+    } catch (err) {
+      console.error('Erro ao carregar abas do Financeiro:', err);
+      UI.showFinanceiroState('error');
+      UI.els.financeiroErrorMessage.textContent = 'Não foi possível conectar à planilha.';
+    }
+  }
+
+  async function loadFinanceiroData(sheetName) {
+    UI.showFinanceiroState('loading');
+    try {
+      const data = await API.fetchFinanceiroData(sheetName);
+      if (!data.success) {
+        UI.showFinanceiroState('error');
+        UI.els.financeiroErrorMessage.textContent = data.error || 'Erro desconhecido';
+        return;
+      }
+
+      state.financeiroMonths = data.months;
+      state.financeiroMonthColMap = data.monthColMap;
+      state.financeiroStudents = data.students;
+
+      if (state.financeiroMonths.length === 0) {
+        UI.showFinanceiroState('error');
+        UI.els.financeiroErrorMessage.textContent = 'Nenhum mês (coluna) encontrado na aba FINANCEIRO.';
+        return;
+      }
+
+      UI.renderFinanceiroStudents(state.financeiroStudents, state.financeiroMonths, state.financeiroMonthColMap);
+
+    } catch (err) {
+      console.error('Erro ao carregar dados financeiros:', err);
+      UI.showFinanceiroState('error');
+      UI.els.financeiroErrorMessage.textContent = 'Falha ao conectar ou processar os dados do Financeiro.';
     }
   }
 

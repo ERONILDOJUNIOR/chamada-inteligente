@@ -178,4 +178,74 @@ router.post('/geral', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/financeiro-sheets
+ * Lista todas as abas de Financeiro
+ */
+router.get('/financeiro-sheets', async (req, res) => {
+  try {
+    const sheetNames = await sheetsService.getFinanceiroSheetNames();
+    res.json({ success: true, sheets: sheetNames });
+  } catch (error) {
+    console.error('Erro ao buscar abas do financeiro:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível buscar as abas do financeiro.',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/financeiro/:sheetName
+ * Retorna dados da aba de Financeiro
+ */
+router.get('/financeiro/:sheetName', async (req, res) => {
+  try {
+    const { sheetName } = req.params;
+    const data = await sheetsService.getFinanceiroData(sheetName);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    console.error('Erro ao buscar dados do financeiro:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível buscar os dados do financeiro.',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/financeiro/update
+ * Atualiza um campo (Data de Vencimento ou Data de Pagamento)
+ */
+router.post('/financeiro/update', async (req, res) => {
+  try {
+    const { sheetName, rowIndex, colIndex, value } = req.body;
+
+    if (!sheetName || !rowIndex || colIndex === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Campos obrigatórios: sheetName, rowIndex, colIndex',
+      });
+    }
+
+    const result = await sheetsService.updateFinanceiroField(
+      sheetName,
+      Number(rowIndex),
+      Number(colIndex),
+      value || ''
+    );
+
+    res.json(result);
+  } catch (error) {
+    console.error('Erro ao atualizar financeiro:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível salvar a atualização no financeiro.',
+      details: error.message,
+    });
+  }
+});
+
 module.exports = router;

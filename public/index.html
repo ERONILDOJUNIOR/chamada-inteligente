@@ -42,8 +42,10 @@
       <form id="loginForm" class="login-form" autocomplete="off">
         <div class="login-input-wrapper">
           <i class="bi bi-key-fill login-input-icon"></i>
-          <input type="password" id="accessCodeInput" class="login-input" placeholder="Código de acesso" autofocus
-            required>
+          <input type="password" id="accessCodeInput" class="login-input" placeholder="Código de acesso" autofocus required>
+          <button type="button" id="btnTogglePassword" class="btn-toggle-password" tabindex="-1">
+            <i class="bi bi-eye-fill"></i>
+          </button>
         </div>
         <p id="loginError" class="login-error d-none">Código inválido. Tente novamente.</p>
         <button type="submit" id="btnLogin" class="login-btn">
@@ -74,6 +76,7 @@
         <button id="navDashboard" class="nav-item active"><i class="bi bi-bar-chart-fill"></i> Dashboard</button>
         <button id="navDiaria" class="nav-item"><i class="bi bi-calendar-check"></i> Chamada Diária</button>
         <button id="navGeral" class="nav-item"><i class="bi bi-clipboard-data"></i> Chamada Geral</button>
+        <button id="navFinanceiro" class="nav-item"><i class="bi bi-currency-dollar"></i> Financeiro</button>
       </nav>
       <div class="sidebar-footer">
         <button id="btnLogout" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
@@ -356,6 +359,75 @@
           </div>
         </main>
       </div><!-- /viewGeral -->
+
+      <!-- ============================================ -->
+      <!-- VIEW: FINANCEIRO -->
+      <!-- ============================================ -->
+      <div id="viewFinanceiro" class="view-section d-none">
+        <header class="app-header">
+          <div class="container">
+            <div class="header-content">
+              <div class="header-icon">
+                <i class="bi bi-currency-dollar"></i>
+              </div>
+              <div class="header-text">
+                <h1>Financeiro</h1>
+                <p class="header-subtitle">Controle de Pagamentos</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="controls-section">
+          <div class="container" style="grid-template-columns: 1fr 1fr; display: grid; gap: 16px;">
+            <div class="control-group">
+              <label for="financeiroSheetSelector" class="control-label">
+                <i class="bi bi-folder-fill"></i> Turma (Financeiro)
+              </label>
+              <select id="financeiroSheetSelector" class="form-select glass-select" disabled>
+                <option value="">Carregando turmas...</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="financeiroSearchInput" class="control-label">
+                <i class="bi bi-search"></i> Buscar aluno
+              </label>
+              <input type="text" id="financeiroSearchInput" class="form-control glass-input" placeholder="Digite o nome..." disabled>
+            </div>
+          </div>
+        </section>
+
+        <main class="main-content">
+          <div class="container">
+            <div id="financeiroEmptyState" class="empty-state">
+              <div class="empty-icon">
+                <i class="bi bi-wallet2"></i>
+              </div>
+              <h3>Selecione uma turma</h3>
+              <p>Escolha a aba do financeiro para ver os pagamentos dos alunos.</p>
+            </div>
+
+            <div id="financeiroLoadingState" class="loading-state d-none">
+              <div class="skeleton-card"></div>
+              <div class="skeleton-card"></div>
+              <div class="skeleton-card"></div>
+            </div>
+
+            <div id="financeiroStudentList" class="student-list d-none"></div>
+
+            <div id="financeiroErrorState" class="error-state d-none">
+              <div class="error-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </div>
+              <h3>Ops! Algo deu errado</h3>
+              <p id="financeiroErrorMessage">Não foi possível carregar os dados.</p>
+              <button id="financeiroBtnRetry" class="btn btn-retry">
+                <i class="bi bi-arrow-clockwise"></i> Tentar novamente
+              </button>
+            </div>
+          </div>
+        </main>
+      </div><!-- /viewFinanceiro -->
 
       <!-- ============================================ -->
       <!-- MODAL: Adicionar Data -->

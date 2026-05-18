@@ -146,5 +146,43 @@ const API = {
     this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao atualizar dados gerais');
     return res.json();
+  },
+
+  /**
+   * Busca lista de abas da planilha para Financeiro
+   */
+  async fetchFinanceiroSheets() {
+    const res = await fetch(`${this.BASE_URL}/financeiro-sheets`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao buscar abas do financeiro');
+    return res.json();
+  },
+
+  /**
+   * Busca dados da "FINANCEIRO"
+   */
+  async fetchFinanceiroData(sheetName) {
+    const res = await fetch(`${this.BASE_URL}/financeiro/${encodeURIComponent(sheetName)}`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao buscar dados do financeiro');
+    return res.json();
+  },
+
+  /**
+   * Atualiza valor num financeiro (Data ou Data Pg)
+   */
+  async updateFinanceiroField(data) {
+    const res = await fetch(`${this.BASE_URL}/financeiro/update`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: JSON.stringify(data),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao atualizar dados financeiro');
+    return res.json();
   }
 };
