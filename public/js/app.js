@@ -365,6 +365,13 @@
       }
     });
 
+    UI.els.dashFinanceiroSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (sheetName) {
+        await renderChartFinanceiroForSheet(sheetName);
+      }
+    });
+
     // ---- Eventos da Chamada Geral ----
     UI.els.geralSheetSelector.addEventListener('change', async (e) => {
       const sheetName = e.target.value;
@@ -697,15 +704,18 @@
   async function loadDashboardData() {
     try {
       // Fetch available sheets for both contexts in parallel
-      const [diarioRes, geralRes] = await Promise.all([
+      const [diarioRes, geralRes, financeiroRes] = await Promise.all([
         API.fetchSheets(),
-        API.fetchGeralSheets()
+        API.fetchGeralSheets(),
+        API.fetchFinanceiroSheets()
       ]);
 
       if (diarioRes.success) state.dashDiarioSheets = diarioRes.sheets;
       if (geralRes.success) state.dashGeralSheets = geralRes.sheets;
+      let financeiroSheets = [];
+      if (financeiroRes.success) financeiroSheets = financeiroRes.sheets;
 
-      UI.populateDashSelectors(state.dashDiarioSheets, state.dashGeralSheets);
+      UI.populateDashSelectors(state.dashDiarioSheets, state.dashGeralSheets, financeiroSheets);
 
       // Render initial charts if sheets are available
       if (state.dashDiarioSheets.length > 0) {
@@ -716,6 +726,11 @@
       if (state.dashGeralSheets.length > 0) {
         UI.els.dashGeralSelector.value = state.dashGeralSheets[0];
         await renderChartEixosForSheet(state.dashGeralSheets[0]);
+      }
+
+      if (financeiroSheets.length > 0) {
+        UI.els.dashFinanceiroSelector.value = financeiroSheets[0];
+        await renderChartFinanceiroForSheet(financeiroSheets[0]);
       }
 
     } catch (err) {
@@ -769,6 +784,39 @@
       UI.renderChartEixos(labels, presentData, absentData);
     } catch (err) {
       console.error('Erro ao renderizar gráfico de eixos', err);
+    }
+  }
+
+  async function renderChartFinanceiroForSheet(sheetName) {
+    try {
+      const data = await API.fetchFinanceiroData(sheetName);
+      if (!data.success) return;
+
+      const labels = data.months; // Os meses
+      const dataPercent = new Array(labels.length).fill(0);
+      const totalStudents = data.students.length;
+
+      if (totalStudents === 0) return;
+
+      const paidCounts = new Array(labels.length).fill(0);
+
+      data.students.forEach(student => {
+        labels.forEach((month, index) => {
+          const val = student.pagamentos[month];
+          if (val && val.trim() !== '') {
+            paidCounts[index]++;
+          }
+        });
+      });
+
+      labels.forEach((_, index) => {
+        const percent = (paidCounts[index] / totalStudents) * 100;
+        dataPercent[index] = Math.round(percent);
+      });
+
+      UI.renderChartFinanceiro(labels, dataPercent);
+    } catch (err) {
+      console.error('Erro ao renderizar gráfico financeiro', err);
     }
   }
 

@@ -130,8 +130,7 @@
 
             <!-- Gráfico 2: Eixos (Chamada Geral) -->
             <div class="student-card" style="display: block; padding: 20px;">
-              <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-primary);">Presenças e Faltas por
-                Eixo</h3>
+              <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-primary);">Presenças e Faltas por Eixo</h3>
               <div class="control-group" style="margin-bottom: 16px; max-width: 300px;">
                 <select id="dashGeralSelector" class="form-select glass-select" disabled>
                   <option value="">Carregando turmas (Geral)...</option>
@@ -139,6 +138,19 @@
               </div>
               <div style="position: relative; height: 300px; width: 100%;">
                 <canvas id="chartEixos"></canvas>
+              </div>
+            </div>
+
+            <!-- Gráfico 3: Financeiro -->
+            <div class="student-card" style="display: block; padding: 20px;">
+              <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-primary);">Taxa de Pagamento por Mês (%)</h3>
+              <div class="control-group" style="margin-bottom: 16px; max-width: 300px;">
+                <select id="dashFinanceiroSelector" class="form-select glass-select" disabled>
+                  <option value="">Carregando turmas (Financeiro)...</option>
+                </select>
+              </div>
+              <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="chartFinanceiro"></canvas>
               </div>
             </div>
           </div>

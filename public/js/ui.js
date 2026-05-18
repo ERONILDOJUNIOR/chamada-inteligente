@@ -43,8 +43,10 @@ const UI = {
     // Dashboard Elements
     dashDiarioSelector: document.getElementById('dashDiarioSelector'),
     dashGeralSelector: document.getElementById('dashGeralSelector'),
+    dashFinanceiroSelector: document.getElementById('dashFinanceiroSelector'),
     chartDiarioCanvas: document.getElementById('chartDiario'),
     chartEixosCanvas: document.getElementById('chartEixos'),
+    chartFinanceiroCanvas: document.getElementById('chartFinanceiro'),
     
     // Geral Elements
     geralSheetSelector: document.getElementById('geralSheetSelector'),
@@ -365,10 +367,11 @@ const UI = {
   charts: {
     diario: null,
     eixos: null,
+    financeiro: null,
   },
 
-  populateDashSelectors(diarioSheets, geralSheets) {
-    const { dashDiarioSelector, dashGeralSelector } = this.els;
+  populateDashSelectors(diarioSheets, geralSheets, financeiroSheets = []) {
+    const { dashDiarioSelector, dashGeralSelector, dashFinanceiroSelector } = this.els;
     
     dashDiarioSelector.innerHTML = '<option value="">Selecione a turma...</option>';
     diarioSheets.forEach(name => {
@@ -381,6 +384,14 @@ const UI = {
       dashGeralSelector.appendChild(new Option(name, name));
     });
     dashGeralSelector.disabled = false;
+
+    if (dashFinanceiroSelector) {
+      dashFinanceiroSelector.innerHTML = '<option value="">Selecione a turma financeiro...</option>';
+      financeiroSheets.forEach(name => {
+        dashFinanceiroSelector.appendChild(new Option(name, name));
+      });
+      dashFinanceiroSelector.disabled = false;
+    }
   },
 
   renderChartDiario(labels, presentData, absentData) {
@@ -458,6 +469,72 @@ const UI = {
         },
         scales: {
           x: { beginAtZero: true }
+        }
+      }
+    });
+  },
+
+  renderChartFinanceiro(labels, dataPercent) {
+    const ctx = this.els.chartFinanceiroCanvas.getContext('2d');
+    
+    if (this.charts.financeiro) {
+      this.charts.financeiro.destroy();
+    }
+
+    // Criando um gradiente bonito para o gráfico de linha/área
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(34, 197, 94, 0.5)'); // accent-green com opacidade
+    gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
+
+    this.charts.financeiro = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Alunos Pagantes (%)',
+            data: dataPercent,
+            borderColor: '#22c55e', // accent-green
+            backgroundColor: gradient,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4, // Suaviza a curva
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#22c55e',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Montserrat' } } },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return ` ${context.parsed.y}% pagos`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { 
+            beginAtZero: true,
+            max: 100, // Porcentagem vai até 100
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          },
+          x: { 
+            grid: {
+              display: false
+            }
+          }
         }
       }
     });
