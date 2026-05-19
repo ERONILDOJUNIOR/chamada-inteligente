@@ -80,6 +80,7 @@
         <button id="navGeral" class="nav-item"><i class="bi bi-clipboard-data"></i> Chamada Geral</button>
         <button id="navFinanceiro" class="nav-item"><i class="bi bi-currency-dollar"></i> Financeiro</button>
         <button id="navMatriculados" class="nav-item"><i class="bi bi-person-vcard"></i> Matriculados</button>
+        <button id="navNotificacoes" class="nav-item"><i class="bi bi-bell-fill"></i> Notificações</button>
       </nav>
       <div class="sidebar-footer">
         <button id="btnLogout" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
@@ -516,6 +517,107 @@
           </div>
         </main>
       </div><!-- /viewMatriculados -->
+
+      <!-- ============================================ -->
+      <!-- VIEW: NOTIFICAÇÕES -->
+      <!-- ============================================ -->
+      <div id="viewNotificacoes" class="view-section d-none">
+        <header class="app-header">
+          <div class="container">
+            <div class="header-content">
+              <div class="header-icon" style="background: rgba(239, 68, 68, 0.2);">
+                <i class="bi bi-bell-fill text-danger"></i>
+              </div>
+              <div class="header-text">
+                <h1>Notificações</h1>
+                <p class="header-subtitle">Lembretes e Cobranças por E-mail</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="controls-section">
+          <div class="container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div class="control-group">
+              <label for="notificacaoSheetSelector" class="control-label">
+                <i class="bi bi-folder-fill"></i> Turma
+              </label>
+              <select id="notificacaoSheetSelector" class="form-select glass-select" disabled>
+                <option value="">Carregando abas...</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="notificacaoTypeSelector" class="control-label">
+                <i class="bi bi-chat-text-fill"></i> Tipo de Mensagem
+              </label>
+              <select id="notificacaoTypeSelector" class="form-select glass-select">
+                <option value="lembrete">Lembrete de Pagamento</option>
+                <option value="atraso">Cobrança de Atraso</option>
+                <option value="personalizada">Personalizada</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="notificacaoDueDate" class="control-label">
+                <i class="bi bi-calendar-event"></i> Data de Pagamento
+              </label>
+              <input type="text" id="notificacaoDueDate" class="form-control glass-input" placeholder="Ex: dia 10">
+            </div>
+          </div>
+        </section>
+
+        <main class="main-content">
+          <div class="container">
+            <!-- Alerta de Segurança -->
+            <div id="notificacaoTestModeAlert" class="alert alert-warning d-flex align-items-center mb-4 d-none" role="alert" style="border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #b45309;">
+              <i class="bi bi-shield-lock-fill me-3" style="font-size: 1.5rem;"></i>
+              <div>
+                <strong>MODO DE TESTE ATIVO:</strong> Por segurança, todos os e-mails serão disparados através da conta <code>eronjr17.ej@gmail.com</code> e redirecionados exclusivamente para <code>preparaumadsal@gmail.com</code>. Os alunos reais não receberão nenhuma mensagem.
+              </div>
+            </div>
+
+            <!-- Editor / Preview de Template -->
+            <div class="student-card mb-4" style="display: block; padding: 20px;">
+              <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-primary);">Preview da Mensagem</h3>
+              <textarea id="notificacaoTemplate" class="form-control glass-input" rows="8" style="font-family: monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical;"></textarea>
+              <small class="text-muted mt-2 d-block">As tags <code>&lt;nome&gt;</code> e <code>&lt;data de pagamento&gt;</code> serão substituídas automaticamente por cada aluno.</small>
+            </div>
+
+            <!-- Seleção de Alunos -->
+            <div class="student-card" style="display: block; padding: 20px;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 style="font-size: 1.1rem; margin: 0; color: var(--text-primary);">Alunos Selecionados</h3>
+                <div class="form-check d-flex align-items-center" style="margin: 0; padding: 0;">
+                  <input class="student-select-checkbox" type="checkbox" id="chkSelectAll" checked style="width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--glass-border); accent-color: var(--accent-purple); cursor: pointer; margin: 0;">
+                  <label class="form-check-label ms-2" for="chkSelectAll" style="cursor: pointer; user-select: none; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Selecionar Todos</label>
+                </div>
+              </div>
+              
+              <div id="notificacaoEmptyState" class="empty-state py-4">
+                <i class="bi bi-people mb-2 d-block" style="font-size: 2rem; color: var(--text-muted);"></i>
+                <p>Selecione uma turma para ver os alunos.</p>
+              </div>
+
+              <div id="notificacaoLoadingState" class="loading-state d-none py-4 text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Carregando alunos...</p>
+              </div>
+
+              <!-- Lista de Checkboxes -->
+              <div id="notificacaoStudentList" class="d-none" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto; padding-right: 8px;">
+                <!-- Preenchido via JS -->
+              </div>
+            </div>
+
+            <!-- Ação de Envio -->
+            <div class="text-end mt-4">
+              <button id="btnSendNotifications" class="btn btn-primary-custom" style="padding: 12px 24px; font-size: 1.1rem;">
+                <span id="btnSendNotificationsText"><i class="bi bi-send-fill me-2"></i> Enviar E-mails</span>
+              </button>
+            </div>
+
+          </div>
+        </main>
+      </div><!-- /viewNotificacoes -->
 
       <!-- ============================================ -->
       <!-- MODAL: Adicionar Data -->

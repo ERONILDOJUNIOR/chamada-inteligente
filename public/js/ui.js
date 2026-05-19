@@ -39,8 +39,10 @@ const UI = {
     viewGeral: document.getElementById('viewGeral'),
     viewFinanceiro: document.getElementById('viewFinanceiro'),
     viewMatriculados: document.getElementById('viewMatriculados'),
+    viewNotificacoes: document.getElementById('viewNotificacoes'),
     navFinanceiro: document.getElementById('navFinanceiro'),
     navMatriculados: document.getElementById('navMatriculados'),
+    navNotificacoes: document.getElementById('navNotificacoes'),
     
     // Dashboard Elements
     dashDiarioSelector: document.getElementById('dashDiarioSelector'),
@@ -80,6 +82,19 @@ const UI = {
     matriculadosErrorState: document.getElementById('matriculadosErrorState'),
     matriculadosErrorMessage: document.getElementById('matriculadosErrorMessage'),
     matriculadosBtnRetry: document.getElementById('matriculadosBtnRetry'),
+
+    // Notificacoes Elements
+    notificacaoSheetSelector: document.getElementById('notificacaoSheetSelector'),
+    notificacaoTypeSelector: document.getElementById('notificacaoTypeSelector'),
+    notificacaoDueDate: document.getElementById('notificacaoDueDate'),
+    notificacaoTemplate: document.getElementById('notificacaoTemplate'),
+    notificacaoStudentList: document.getElementById('notificacaoStudentList'),
+    notificacaoEmptyState: document.getElementById('notificacaoEmptyState'),
+    notificacaoLoadingState: document.getElementById('notificacaoLoadingState'),
+    chkSelectAll: document.getElementById('chkSelectAll'),
+    btnSendNotifications: document.getElementById('btnSendNotifications'),
+    btnSendNotificationsText: document.getElementById('btnSendNotificationsText'),
+    notificacaoTestModeAlert: document.getElementById('notificacaoTestModeAlert'),
   },
 
   /**
@@ -763,6 +778,103 @@ const UI = {
         this.showToast(`Falha ao copiar ${type}`, 'error');
       }
       document.body.removeChild(textArea);
+    }
+  },
+
+  // ==========================================
+  // Notificações UI
+  // ==========================================
+
+  showNotificacaoState(state) {
+    const { notificacaoEmptyState, notificacaoLoadingState, notificacaoStudentList } = this.els;
+    notificacaoEmptyState.classList.toggle('d-none', state !== 'empty');
+    notificacaoLoadingState.classList.toggle('d-none', state !== 'loading');
+    notificacaoStudentList.classList.toggle('d-none', state !== 'list');
+    
+    // Mostra/esconde grid se for list
+    if (state === 'list') {
+      notificacaoStudentList.style.display = 'grid';
+    } else {
+      notificacaoStudentList.style.display = 'none';
+    }
+  },
+
+  populateNotificacaoSheets(sheets) {
+    const { notificacaoSheetSelector } = this.els;
+    notificacaoSheetSelector.innerHTML = '<option value="">Selecione a turma...</option>';
+    sheets.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      notificacaoSheetSelector.appendChild(opt);
+    });
+    notificacaoSheetSelector.disabled = false;
+  },
+
+  renderNotificacaoStudents(students) {
+    const { notificacaoStudentList } = this.els;
+    notificacaoStudentList.innerHTML = '';
+
+    students.forEach((student, i) => {
+      // Ignora alunos sem e-mail
+      if (!student.email) return;
+
+      const div = document.createElement('div');
+      div.className = 'student-select-card';
+      
+      div.innerHTML = `
+        <label class="student-select-label" for="chk_${i}">
+          <input class="student-checkbox student-select-checkbox" type="checkbox" value="${student.name}" id="chk_${i}" checked>
+          <div class="student-select-info">
+            <span class="student-select-name">${student.name}</span>
+            <span class="student-select-email">${student.email}</span>
+          </div>
+        </label>
+      `;
+
+      notificacaoStudentList.appendChild(div);
+    });
+
+    if (notificacaoStudentList.children.length === 0) {
+      this.showNotificacaoState('empty');
+      this.els.notificacaoEmptyState.innerHTML = '<p class="text-warning">Nenhum aluno com e-mail cadastrado nesta turma.</p>';
+    } else {
+      if (this.els.chkSelectAll) {
+        this.els.chkSelectAll.checked = true;
+        this.els.chkSelectAll.indeterminate = false;
+      }
+      this.showNotificacaoState('list');
+    }
+  },
+
+  updateNotificacaoTemplate(type, dueDate) {
+    const { notificacaoTemplate } = this.els;
+    const dateStr = dueDate || 'XX/XX/XXXX';
+
+    let template = '';
+    
+    if (type === 'lembrete') {
+      template = `Olá <nome>,\n\nAqui quem fala é o sistema de notificações do PREPARA UMADSAL.\nQueremos te lembrar que no próximo dia ${dateStr} é o pagamento da sua mensalidade.\n\nVocê pode realizar o pagamento via PIX utilizando a chave: @@@@@@@@@@@@@\n\nDeus abençoe!`;
+    } else if (type === 'atraso') {
+      template = `Olá <nome>,\n\nAqui quem fala é o sistema de notificações do PREPARA UMADSAL.\nNotamos que o seu pagamento com vencimento no dia ${dateStr} está pendente.\n\nPor favor, realize o pagamento via PIX utilizando a chave: @@@@@@@@@@@@@\n\nDeus abençoe e qualquer dúvida estamos à disposição!`;
+    } else {
+      template = `Olá <nome>,\n\n[Sua mensagem aqui]\n\nAtenciosamente,\nEquipe PREPARA UMADSAL`;
+    }
+
+    // Se for personalizada, só muda se estiver vazia ou com o texto padrão
+    if (type !== 'personalizada' || notificacaoTemplate.value === '' || notificacaoTemplate.value.includes('PREPARA UMADSAL')) {
+      notificacaoTemplate.value = template;
+    }
+  },
+
+  setNotificacaoTestMode(isTestMode) {
+    const { notificacaoTestModeAlert, btnSendNotificationsText } = this.els;
+    if (isTestMode) {
+      notificacaoTestModeAlert.classList.remove('d-none');
+      btnSendNotificationsText.innerHTML = '<i class="bi bi-send-fill me-2"></i> Enviar E-mails de Teste';
+    } else {
+      notificacaoTestModeAlert.classList.add('d-none');
+      btnSendNotificationsText.innerHTML = '<i class="bi bi-send-fill me-2"></i> Enviar E-mails aos Alunos';
     }
   }
 };

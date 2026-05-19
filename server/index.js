@@ -10,6 +10,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const attendanceRoutes = require('./routes/attendance');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/api/config', (req, res) => {
   res.json({
     defaultSheetName: process.env.DEFAULT_SHEET_NAME || '',
+    testMode: process.env.TEST_MODE !== 'false',
   });
 });
 
@@ -82,6 +84,7 @@ app.use('/api', (req, res, next) => {
 // Rotas da API (protegidas pelo middleware acima)
 // ============================================
 app.use('/api', attendanceRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ============================================
 // Rota catch-all para SPA (retorna index.html)

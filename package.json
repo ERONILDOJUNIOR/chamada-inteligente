@@ -7,14 +7,19 @@
     "start": "node server/index.js",
     "dev": "nodemon server/index.js"
   },
-  "keywords": ["attendance", "google-sheets", "express"],
+  "keywords": [
+    "attendance",
+    "google-sheets",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "googleapis": "^144.0.0"
+    "googleapis": "^144.0.0",
+    "nodemailer": "^8.0.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

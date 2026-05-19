@@ -35,7 +35,12 @@
     // Estado Matriculados
     matriculadosSheets: [],
     matriculadosSheetName: '',
-    matriculadosStudents: []
+    matriculadosStudents: [],
+
+    // Estado Notificações
+    notificacaoSheets: [],
+    notificacaoSheetName: '',
+    notificacaoStudents: []
   };
 
   // ============================================
@@ -161,6 +166,20 @@
   // ============================================
   async function init() {
     bindEvents();
+    
+    // Busca a config global do backend
+    try {
+      const configRes = await fetch('/api/config', {
+        headers: API._authHeaders(),
+      });
+      const config = await configRes.json();
+      state.testMode = config.testMode;
+      state.defaultSheetName = config.defaultSheetName || '';
+      UI.setNotificacaoTestMode(state.testMode);
+    } catch (e) {
+      console.warn('Não foi possível buscar config global:', e);
+    }
+
     // Inicia pelo Dashboard
     UI.els.navDashboard.click();
   }
@@ -191,12 +210,14 @@
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
+      UI.els.navNotificacoes.classList.remove('active');
       
       UI.els.viewDashboard.classList.remove('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
+      UI.els.viewNotificacoes.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -211,12 +232,14 @@
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
+      UI.els.navNotificacoes.classList.remove('active');
       
       UI.els.viewDiaria.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
+      UI.els.viewNotificacoes.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -229,12 +252,14 @@
       UI.els.navDiaria.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
+      UI.els.navNotificacoes.classList.remove('active');
       
       UI.els.viewGeral.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
+      UI.els.viewNotificacoes.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -249,12 +274,14 @@
       UI.els.navDiaria.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
+      UI.els.navNotificacoes.classList.remove('active');
       
       UI.els.viewFinanceiro.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
+      UI.els.viewNotificacoes.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -269,17 +296,44 @@
       UI.els.navDiaria.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
+      UI.els.navNotificacoes.classList.remove('active');
       
       UI.els.viewMatriculados.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
+      UI.els.viewNotificacoes.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
       if (state.matriculadosSheets.length === 0) {
         loadMatriculadosSheets();
+      }
+    });
+
+    UI.els.navNotificacoes.addEventListener('click', () => {
+      UI.els.navNotificacoes.classList.add('active');
+      UI.els.navDashboard.classList.remove('active');
+      UI.els.navDiaria.classList.remove('active');
+      UI.els.navGeral.classList.remove('active');
+      UI.els.navFinanceiro.classList.remove('active');
+      UI.els.navMatriculados.classList.remove('active');
+      
+      UI.els.viewNotificacoes.classList.remove('d-none');
+      UI.els.viewDashboard.classList.add('d-none');
+      UI.els.viewDiaria.classList.add('d-none');
+      UI.els.viewGeral.classList.add('d-none');
+      UI.els.viewFinanceiro.classList.add('d-none');
+      UI.els.viewMatriculados.classList.add('d-none');
+      
+      UI.els.sidebar.classList.remove('show');
+
+      // Update the template based on current inputs
+      UI.updateNotificacaoTemplate(UI.els.notificacaoTypeSelector.value, UI.els.notificacaoDueDate.value);
+
+      if (state.notificacaoSheets.length === 0) {
+        loadNotificacaoSheets();
       }
     });
 
@@ -565,6 +619,87 @@
         loadMatriculadosSheets();
       }
     });
+
+    // ---- Eventos Notificações ----
+    UI.els.notificacaoSheetSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (!sheetName) {
+        UI.showNotificacaoState('empty');
+        return;
+      }
+      state.notificacaoSheetName = sheetName;
+      await loadNotificacaoData(sheetName);
+    });
+
+    UI.els.notificacaoTypeSelector.addEventListener('change', (e) => {
+      UI.updateNotificacaoTemplate(e.target.value, UI.els.notificacaoDueDate.value);
+    });
+
+    UI.els.notificacaoDueDate.addEventListener('input', (e) => {
+      UI.updateNotificacaoTemplate(UI.els.notificacaoTypeSelector.value, e.target.value);
+    });
+
+    UI.els.chkSelectAll.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const checkboxes = UI.els.notificacaoStudentList.querySelectorAll('.student-checkbox');
+      checkboxes.forEach(chk => chk.checked = isChecked);
+    });
+
+    // Mantém o checkbox "Todos" sincronizado se o usuário marcar/desmarcar individualmente
+    UI.els.notificacaoStudentList.addEventListener('change', (e) => {
+      if (e.target.classList.contains('student-checkbox')) {
+        const checkboxes = UI.els.notificacaoStudentList.querySelectorAll('.student-checkbox');
+        const checkedBoxes = UI.els.notificacaoStudentList.querySelectorAll('.student-checkbox:checked');
+        
+        UI.els.chkSelectAll.checked = (checkboxes.length === checkedBoxes.length);
+        UI.els.chkSelectAll.indeterminate = (checkedBoxes.length > 0 && checkedBoxes.length < checkboxes.length);
+      }
+    });
+
+    UI.els.btnSendNotifications.addEventListener('click', async () => {
+      const checkboxes = UI.els.notificacaoStudentList.querySelectorAll('.student-checkbox:checked');
+      const selectedStudents = Array.from(checkboxes).map(chk => chk.value);
+
+      if (selectedStudents.length === 0) {
+        UI.showToast('Selecione pelo menos um aluno.', 'error');
+        return;
+      }
+
+      const template = UI.els.notificacaoTemplate.value.trim();
+      if (!template) {
+        UI.showToast('A mensagem não pode estar vazia.', 'error');
+        return;
+      }
+
+      const confirmMsg = `Tem certeza que deseja enviar e-mails para ${selectedStudents.length} aluno(s)?\n\n(Lembre-se: se estiver em modo teste, tudo será enviado de eronjr17.ej@gmail.com e redirecionado para preparaumadsal@gmail.com)`;
+      if (!confirm(confirmMsg)) return;
+
+      const btn = UI.els.btnSendNotifications;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Enviando...';
+      btn.disabled = true;
+
+      try {
+        const result = await API.sendNotifications({
+          sheetName: state.notificacaoSheetName,
+          type: UI.els.notificacaoTypeSelector.value,
+          messageTemplate: template,
+          dueDate: UI.els.notificacaoDueDate.value,
+          selectedStudents: selectedStudents
+        });
+
+        if (result.success) {
+          UI.showToast(`Sucesso! ${result.message}`, 'success');
+        } else {
+          UI.showToast(result.error || 'Erro ao enviar', 'error');
+        }
+      } catch (err) {
+        UI.showToast('Erro de conexão ao tentar enviar os e-mails.', 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    });
   }
 
   // ============================================
@@ -572,17 +707,7 @@
   // ============================================
   async function loadSheets() {
     try {
-      // Busca a config do backend para saber a aba padrão
-      let defaultSheet = '';
-      try {
-        const configRes = await fetch('/api/config', {
-          headers: API._authHeaders(),
-        });
-        const config = await configRes.json();
-        defaultSheet = config.defaultSheetName || '';
-      } catch (e) {
-        console.warn('Não foi possível buscar config padrão:', e);
-      }
+      const defaultSheet = state.defaultSheetName || '';
 
       const data = await API.fetchSheets();
       if (data.success && data.sheets.length > 0) {
@@ -803,6 +928,54 @@
       console.error('Erro ao carregar dados de matriculados:', err);
       UI.showMatriculadosState('error');
       UI.els.matriculadosErrorMessage.textContent = 'Falha ao conectar ou processar os dados de Matriculados.';
+    }
+  }
+
+  // ============================================
+  // Carregamento de dados (Notificações)
+  // ============================================
+  // Reutiliza o mesmo método de matriculados, pois a estrutura da aba é a mesma
+  async function loadNotificacaoSheets() {
+    try {
+      const data = await API.fetchMatriculadosSheets();
+      if (data.success && data.sheets.length > 0) {
+        state.notificacaoSheets = data.sheets;
+        UI.populateNotificacaoSheets(data.sheets);
+        
+        const targetSheet = data.sheets[0];
+        UI.els.notificacaoSheetSelector.value = targetSheet;
+        state.notificacaoSheetName = targetSheet;
+        await loadNotificacaoData(targetSheet);
+      } else {
+        UI.showNotificacaoState('empty');
+      }
+    } catch (err) {
+      console.error('Erro ao carregar abas para Notificações:', err);
+      UI.showNotificacaoState('empty');
+    }
+  }
+
+  async function loadNotificacaoData(sheetName) {
+    UI.showNotificacaoState('loading');
+    try {
+      const data = await API.fetchMatriculadosData(sheetName);
+      if (!data.success) {
+        UI.showNotificacaoState('empty');
+        return;
+      }
+
+      state.notificacaoStudents = data.students;
+
+      if (state.notificacaoStudents.length === 0) {
+        UI.showNotificacaoState('empty');
+        return;
+      }
+
+      UI.renderNotificacaoStudents(state.notificacaoStudents);
+
+    } catch (err) {
+      console.error('Erro ao carregar dados para Notificações:', err);
+      UI.showNotificacaoState('empty');
     }
   }
 

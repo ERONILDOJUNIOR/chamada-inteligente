@@ -1351,3 +1351,64 @@ button {
   opacity: 0.7;
   margin-top: 4px;
 }
+
+/* ============================================
+   STUDENT SELECT CARDS (NOTIFICAÇÕES)
+   ============================================ */
+.student-select-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  display: block;
+}
+
+.student-select-card:hover {
+  border-color: var(--accent-purple);
+  box-shadow: var(--glass-shadow);
+  transform: translateY(-1px);
+}
+
+.student-select-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+  margin: 0;
+}
+
+.student-select-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--glass-border);
+  accent-color: var(--accent-purple);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.student-select-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.student-select-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.student-select-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-top: 2px;
+}

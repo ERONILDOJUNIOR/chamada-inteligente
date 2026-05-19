@@ -208,5 +208,20 @@ const API = {
     this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao buscar dados de matriculados');
     return res.json();
+  },
+
+  /**
+   * Envia Notificações
+   */
+  async sendNotifications(data) {
+    const res = await fetch(`${this.BASE_URL}/notifications/send`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: JSON.stringify(data),
+    });
+    this._checkAuth(res);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Falha ao enviar notificações');
+    return result;
   }
 };
