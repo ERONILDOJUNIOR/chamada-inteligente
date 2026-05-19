@@ -1,5 +1,11 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 require('dotenv').config();
+
+// Forçar Node.js a priorizar IPv4 sobre IPv6 para evitar problemas de rede (ENETUNREACH/ETIMEDOUT) no Render
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 // Configuração do transporter (exemplo usando Gmail/SMTP padrão)
 // O ideal é utilizar EMAIL_USER e EMAIL_PASS no .env
