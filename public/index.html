@@ -79,6 +79,7 @@
         <button id="navDiaria" class="nav-item"><i class="bi bi-calendar-check"></i> Chamada Diária</button>
         <button id="navGeral" class="nav-item"><i class="bi bi-clipboard-data"></i> Chamada Geral</button>
         <button id="navFinanceiro" class="nav-item"><i class="bi bi-currency-dollar"></i> Financeiro</button>
+        <button id="navMatriculados" class="nav-item"><i class="bi bi-person-vcard"></i> Matriculados</button>
       </nav>
       <div class="sidebar-footer">
         <button id="btnLogout" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
@@ -445,6 +446,76 @@
           </div>
         </main>
       </div><!-- /viewFinanceiro -->
+
+      <!-- ============================================ -->
+      <!-- VIEW: MATRICULADOS -->
+      <!-- ============================================ -->
+      <div id="viewMatriculados" class="view-section d-none">
+        <header class="app-header">
+          <div class="container">
+            <div class="header-content">
+              <div class="header-icon">
+                <i class="bi bi-person-vcard"></i>
+              </div>
+              <div class="header-text">
+                <h1>Alunos Matriculados</h1>
+                <p class="header-subtitle">Contatos e Informações</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="controls-section">
+          <div class="container" style="grid-template-columns: 1fr 1fr; display: grid; gap: 16px;">
+            <div class="control-group">
+              <label for="matriculadosSheetSelector" class="control-label">
+                <i class="bi bi-folder-fill"></i> Aba (Planilha)
+              </label>
+              <select id="matriculadosSheetSelector" class="form-select glass-select" disabled>
+                <option value="">Carregando abas...</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="matriculadosSearchInput" class="control-label">
+                <i class="bi bi-search"></i> Buscar aluno
+              </label>
+              <input type="text" id="matriculadosSearchInput" class="form-control glass-input"
+                placeholder="Digite o nome..." disabled>
+            </div>
+          </div>
+        </section>
+
+        <main class="main-content">
+          <div class="container">
+            <div id="matriculadosEmptyState" class="empty-state">
+              <div class="empty-icon">
+                <i class="bi bi-people"></i>
+              </div>
+              <h3>Selecione uma aba</h3>
+              <p>Escolha a aba de matriculados para visualizar os alunos.</p>
+            </div>
+
+            <div id="matriculadosLoadingState" class="loading-state d-none">
+              <div class="skeleton-card"></div>
+              <div class="skeleton-card"></div>
+              <div class="skeleton-card"></div>
+            </div>
+
+            <div id="matriculadosStudentList" class="student-list d-none"></div>
+
+            <div id="matriculadosErrorState" class="error-state d-none">
+              <div class="error-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </div>
+              <h3>Ops! Algo deu errado</h3>
+              <p id="matriculadosErrorMessage">Não foi possível carregar os dados.</p>
+              <button id="matriculadosBtnRetry" class="btn btn-retry">
+                <i class="bi bi-arrow-clockwise"></i> Tentar novamente
+              </button>
+            </div>
+          </div>
+        </main>
+      </div><!-- /viewMatriculados -->
 
       <!-- ============================================ -->
       <!-- MODAL: Adicionar Data -->

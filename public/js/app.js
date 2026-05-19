@@ -30,7 +30,12 @@
     financeiroSheetName: '',
     financeiroMonths: [],
     financeiroMonthColMap: {},
-    financeiroStudents: []
+    financeiroStudents: [],
+
+    // Estado Matriculados
+    matriculadosSheets: [],
+    matriculadosSheetName: '',
+    matriculadosStudents: []
   };
 
   // ============================================
@@ -185,11 +190,13 @@
       UI.els.navDiaria.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
+      UI.els.navMatriculados.classList.remove('active');
       
       UI.els.viewDashboard.classList.remove('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
+      UI.els.viewMatriculados.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -203,11 +210,13 @@
       UI.els.navDashboard.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
+      UI.els.navMatriculados.classList.remove('active');
       
       UI.els.viewDiaria.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
+      UI.els.viewMatriculados.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -219,11 +228,13 @@
       UI.els.navDashboard.classList.remove('active');
       UI.els.navDiaria.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
+      UI.els.navMatriculados.classList.remove('active');
       
       UI.els.viewGeral.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
+      UI.els.viewMatriculados.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -237,16 +248,38 @@
       UI.els.navDashboard.classList.remove('active');
       UI.els.navDiaria.classList.remove('active');
       UI.els.navGeral.classList.remove('active');
+      UI.els.navMatriculados.classList.remove('active');
       
       UI.els.viewFinanceiro.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
       UI.els.viewDiaria.classList.add('d-none');
       UI.els.viewGeral.classList.add('d-none');
+      UI.els.viewMatriculados.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
       if (state.financeiroSheets.length === 0) {
         loadFinanceiroSheets();
+      }
+    });
+
+    UI.els.navMatriculados.addEventListener('click', () => {
+      UI.els.navMatriculados.classList.add('active');
+      UI.els.navDashboard.classList.remove('active');
+      UI.els.navDiaria.classList.remove('active');
+      UI.els.navGeral.classList.remove('active');
+      UI.els.navFinanceiro.classList.remove('active');
+      
+      UI.els.viewMatriculados.classList.remove('d-none');
+      UI.els.viewDashboard.classList.add('d-none');
+      UI.els.viewDiaria.classList.add('d-none');
+      UI.els.viewGeral.classList.add('d-none');
+      UI.els.viewFinanceiro.classList.add('d-none');
+      
+      UI.els.sidebar.classList.remove('show');
+
+      if (state.matriculadosSheets.length === 0) {
+        loadMatriculadosSheets();
       }
     });
 
@@ -509,6 +542,29 @@
         input.disabled = false;
       }
     });
+
+    // ---- Eventos Matriculados ----
+    UI.els.matriculadosSheetSelector.addEventListener('change', async (e) => {
+      const sheetName = e.target.value;
+      if (!sheetName) {
+        UI.showMatriculadosState('empty');
+        return;
+      }
+      state.matriculadosSheetName = sheetName;
+      await loadMatriculadosData(sheetName);
+    });
+
+    UI.els.matriculadosSearchInput.addEventListener('input', (e) => {
+      UI.filterMatriculadosStudents(e.target.value);
+    });
+
+    UI.els.matriculadosBtnRetry.addEventListener('click', () => {
+      if (state.matriculadosSheetName) {
+        loadMatriculadosData(state.matriculadosSheetName);
+      } else {
+        loadMatriculadosSheets();
+      }
+    });
   }
 
   // ============================================
@@ -695,6 +751,58 @@
       console.error('Erro ao carregar dados financeiros:', err);
       UI.showFinanceiroState('error');
       UI.els.financeiroErrorMessage.textContent = 'Falha ao conectar ou processar os dados do Financeiro.';
+    }
+  }
+
+  // ============================================
+  // Carregamento de dados (Matriculados)
+  // ============================================
+  async function loadMatriculadosSheets() {
+    try {
+      const data = await API.fetchMatriculadosSheets();
+      if (data.success && data.sheets.length > 0) {
+        state.matriculadosSheets = data.sheets;
+        UI.populateMatriculadosSheets(data.sheets);
+        
+        const targetSheet = data.sheets[0];
+        UI.els.matriculadosSheetSelector.value = targetSheet;
+        state.matriculadosSheetName = targetSheet;
+        await loadMatriculadosData(targetSheet);
+      } else {
+        UI.showMatriculadosState('error');
+        UI.els.matriculadosErrorMessage.textContent = 'Nenhuma aba de Matriculados encontrada.';
+      }
+    } catch (err) {
+      console.error('Erro ao carregar abas de Matriculados:', err);
+      UI.showMatriculadosState('error');
+      UI.els.matriculadosErrorMessage.textContent = 'Não foi possível conectar à planilha.';
+    }
+  }
+
+  async function loadMatriculadosData(sheetName) {
+    UI.showMatriculadosState('loading');
+    try {
+      const data = await API.fetchMatriculadosData(sheetName);
+      if (!data.success) {
+        UI.showMatriculadosState('error');
+        UI.els.matriculadosErrorMessage.textContent = data.error || 'Erro desconhecido';
+        return;
+      }
+
+      state.matriculadosStudents = data.students;
+
+      if (state.matriculadosStudents.length === 0) {
+        UI.showMatriculadosState('error');
+        UI.els.matriculadosErrorMessage.textContent = 'Nenhum aluno encontrado na aba selecionada.';
+        return;
+      }
+
+      UI.renderMatriculadosStudents(state.matriculadosStudents);
+
+    } catch (err) {
+      console.error('Erro ao carregar dados de matriculados:', err);
+      UI.showMatriculadosState('error');
+      UI.els.matriculadosErrorMessage.textContent = 'Falha ao conectar ou processar os dados de Matriculados.';
     }
   }
 

@@ -184,5 +184,29 @@ const API = {
     this._checkAuth(res);
     if (!res.ok) throw new Error('Falha ao atualizar dados financeiro');
     return res.json();
+  },
+
+  /**
+   * Busca lista de abas de Matriculados
+   */
+  async fetchMatriculadosSheets() {
+    const res = await fetch(`${this.BASE_URL}/matriculados-sheets`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao buscar abas de matriculados');
+    return res.json();
+  },
+
+  /**
+   * Busca dados da aba de Matriculados
+   */
+  async fetchMatriculadosData(sheetName) {
+    const res = await fetch(`${this.BASE_URL}/matriculados/${encodeURIComponent(sheetName)}`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    if (!res.ok) throw new Error('Falha ao buscar dados de matriculados');
+    return res.json();
   }
 };

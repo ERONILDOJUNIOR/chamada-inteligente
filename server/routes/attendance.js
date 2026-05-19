@@ -248,4 +248,41 @@ router.post('/financeiro/update', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/matriculados-sheets
+ * Lista todas as abas de Matriculados
+ */
+router.get('/matriculados-sheets', async (req, res) => {
+  try {
+    const sheetNames = await sheetsService.getMatriculadosSheetNames();
+    res.json({ success: true, sheets: sheetNames });
+  } catch (error) {
+    console.error('Erro ao buscar abas de matriculados:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível buscar as abas de matriculados.',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/matriculados/:sheetName
+ * Retorna dados da aba de Matriculados (nome, email, celular)
+ */
+router.get('/matriculados/:sheetName', async (req, res) => {
+  try {
+    const { sheetName } = req.params;
+    const data = await sheetsService.getMatriculadosData(sheetName);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    console.error('Erro ao buscar dados de matriculados:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Não foi possível buscar os dados de matriculados.',
+      details: error.message,
+    });
+  }
+});
+
 module.exports = router;

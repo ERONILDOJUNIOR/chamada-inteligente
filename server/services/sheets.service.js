@@ -499,6 +499,85 @@ async function updateFinanceiroField(sheetName, rowIndex, colIndex, value) {
   return { success: true, message: `Atualizado ${cellRange} = ${value}` };
 }
 
+/**
+ * Busca abas de Matriculados (iniciam com MATRICULADOS)
+ */
+async function getMatriculadosSheetNames() {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+
+  const allNames = response.data.sheets.map((s) => s.properties.title);
+  return allNames.filter((name) => name.toUpperCase().startsWith('MATRICULADOS'));
+}
+
+/**
+ * Lê os dados da aba de Matriculados
+ * Tenta identificar dinamicamente as colunas de "Nome completo", "E-mail" e "Celular", ou usa índices fixos.
+ */
+async function getMatriculadosData(sheetName) {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `'${sheetName}'`,
+  });
+
+  const rows = response.data.values || [];
+
+  if (rows.length < 2) {
+    return { students: [] };
+  }
+
+  // Linha 0 geralmente contém os cabeçalhos (baseado no CSV fornecido)
+  const headerRow = rows[0] || [];
+  const colMap = {};
+  headerRow.forEach((h, idx) => {
+    colMap[h.trim().toLowerCase()] = idx;
+  });
+
+  // Tenta encontrar dinamicamente pelos nomes, ou usa os índices padrão do CSV (Nome=2, Email=7, Celular=8)
+  const getColIndex = (possibleNames, fallbackIndex) => {
+    for (const name of possibleNames) {
+      if (colMap[name] !== undefined) return colMap[name];
+    }
+    return fallbackIndex;
+  };
+
+  const nameIdx = getColIndex(['nome completo:', 'nome completo', 'nome'], 2);
+  const emailIdx = getColIndex(['e-mail:', 'e-mail', 'email:', 'email'], 7);
+  const phoneIdx = getColIndex(['celular:', 'celular', 'telefone:', 'telefone', 'whatsapp', 'whatsapp:'], 8);
+
+  const students = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const nameCell = (row[nameIdx] || '').trim();
+    const emailCell = (row[emailIdx] || '').trim();
+    const phoneCell = (row[phoneIdx] || '').trim();
+
+    // Pula linhas onde o nome é vazio, ou cabeçalhos
+    if (!nameCell) continue;
+    if (['nome', 'nome completo', 'nome completo:'].includes(nameCell.toLowerCase())) continue;
+
+    students.push({
+      name: nameCell,
+      email: emailCell,
+      phone: phoneCell,
+    });
+  }
+
+  // Ordenar alfabeticamente para melhor visualização
+  students.sort((a, b) => a.name.localeCompare(b.name));
+
+  return { students };
+}
+
 module.exports = {
   getSheetNames,
   getGeralSheetNames,
@@ -509,5 +588,7 @@ module.exports = {
   updateGeralAttendance,
   getFinanceiroSheetNames,
   getFinanceiroData,
-  updateFinanceiroField
+  updateFinanceiroField,
+  getMatriculadosSheetNames,
+  getMatriculadosData
 };

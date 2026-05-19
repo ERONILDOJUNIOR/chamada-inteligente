@@ -38,7 +38,9 @@ const UI = {
     viewDiaria: document.getElementById('viewDiaria'),
     viewGeral: document.getElementById('viewGeral'),
     viewFinanceiro: document.getElementById('viewFinanceiro'),
+    viewMatriculados: document.getElementById('viewMatriculados'),
     navFinanceiro: document.getElementById('navFinanceiro'),
+    navMatriculados: document.getElementById('navMatriculados'),
     
     // Dashboard Elements
     dashDiarioSelector: document.getElementById('dashDiarioSelector'),
@@ -68,6 +70,16 @@ const UI = {
     financeiroErrorState: document.getElementById('financeiroErrorState'),
     financeiroErrorMessage: document.getElementById('financeiroErrorMessage'),
     financeiroBtnRetry: document.getElementById('financeiroBtnRetry'),
+
+    // Matriculados Elements
+    matriculadosSheetSelector: document.getElementById('matriculadosSheetSelector'),
+    matriculadosSearchInput: document.getElementById('matriculadosSearchInput'),
+    matriculadosEmptyState: document.getElementById('matriculadosEmptyState'),
+    matriculadosLoadingState: document.getElementById('matriculadosLoadingState'),
+    matriculadosStudentList: document.getElementById('matriculadosStudentList'),
+    matriculadosErrorState: document.getElementById('matriculadosErrorState'),
+    matriculadosErrorMessage: document.getElementById('matriculadosErrorMessage'),
+    matriculadosBtnRetry: document.getElementById('matriculadosBtnRetry'),
   },
 
   /**
@@ -642,5 +654,115 @@ const UI = {
       const name = card.dataset.name;
       card.style.display = !q || name.includes(q) ? '' : 'none';
     });
+  },
+
+  // ==========================================
+  // Matriculados UI
+  // ==========================================
+
+  showMatriculadosState(state) {
+    const { matriculadosEmptyState, matriculadosLoadingState, matriculadosStudentList, matriculadosErrorState } = this.els;
+    matriculadosEmptyState.classList.toggle('d-none', state !== 'empty');
+    matriculadosLoadingState.classList.toggle('d-none', state !== 'loading');
+    matriculadosStudentList.classList.toggle('d-none', state !== 'list');
+    matriculadosErrorState.classList.toggle('d-none', state !== 'error');
+  },
+
+  populateMatriculadosSheets(sheets) {
+    const { matriculadosSheetSelector } = this.els;
+    matriculadosSheetSelector.innerHTML = '<option value="">Selecione a aba de matriculados...</option>';
+    sheets.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      matriculadosSheetSelector.appendChild(opt);
+    });
+    matriculadosSheetSelector.disabled = false;
+  },
+
+  renderMatriculadosStudents(students) {
+    const { matriculadosStudentList, matriculadosSearchInput } = this.els;
+    matriculadosStudentList.innerHTML = '';
+
+    students.forEach((student, i) => {
+      const card = document.createElement('div');
+      card.className = 'student-card';
+      card.style.animationDelay = `${i * 0.04}s`;
+      card.dataset.name = student.name.toLowerCase();
+
+      // Clean phone number for WhatsApp Link and display (remove non-digits)
+      const cleanPhone = student.phone ? student.phone.replace(/\D/g, '') : '';
+      const waLink = cleanPhone ? `https://wa.me/55${cleanPhone}` : '#';
+
+      card.innerHTML = `
+        <div class="student-info" style="flex-wrap: wrap; gap: 16px;">
+          <div class="student-name-section" style="min-width: 200px; flex: 1;">
+            <div class="student-avatar">${this.getInitials(student.name)}</div>
+            <div>
+              <div class="student-name" title="${student.name}">${student.name}</div>
+              <div class="student-status">
+                ${student.email ? `<span style="display:block; margin-bottom:2px;"><i class="bi bi-envelope"></i> ${student.email}</span>` : ''}
+                ${cleanPhone ? `<span><i class="bi bi-telephone"></i> ${cleanPhone}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          
+          <div class="attendance-buttons" style="justify-content: flex-end; align-items: center;">
+            ${student.email ? `
+              <button class="btn-contact" title="Copiar E-mail" onclick="UI.copyToClipboard('${student.email}', 'E-mail')">
+                <i class="bi bi-copy"></i>
+              </button>
+            ` : ''}
+            ${cleanPhone ? `
+              <button class="btn-contact" title="Copiar Celular" onclick="UI.copyToClipboard('${cleanPhone}', 'Celular')">
+                <i class="bi bi-clipboard"></i>
+              </button>
+              <a href="${waLink}" target="_blank" class="btn-contact btn-whatsapp" title="WhatsApp">
+                <i class="bi bi-whatsapp"></i>
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      matriculadosStudentList.appendChild(card);
+    });
+
+    matriculadosSearchInput.disabled = false;
+    this.showMatriculadosState('list');
+  },
+
+  filterMatriculadosStudents(query) {
+    const cards = this.els.matriculadosStudentList.querySelectorAll('.student-card');
+    const q = query.toLowerCase().trim();
+    cards.forEach(card => {
+      const name = card.dataset.name;
+      card.style.display = !q || name.includes(q) ? '' : 'none';
+    });
+  },
+
+  copyToClipboard(text, type) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast(`${type} copiado para a área de transferência!`, 'success');
+      }).catch(err => {
+        console.error('Falha ao copiar', err);
+        this.showToast(`Falha ao copiar ${type}`, 'error');
+      });
+    } else {
+      // Fallback
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.showToast(`${type} copiado!`, 'success');
+      } catch (err) {
+        this.showToast(`Falha ao copiar ${type}`, 'error');
+      }
+      document.body.removeChild(textArea);
+    }
   }
 };
