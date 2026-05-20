@@ -33,43 +33,48 @@ router.post('/send', async (req, res) => {
       });
     }
 
-    const results = [];
-    let sentCount = 0;
+    // Função que processa os emails em segundo plano
+    const sendEmailsInBackground = async () => {
+      console.log(`[Background] Iniciando envio de ${studentsToEmail.length} e-mails...`);
+      for (const student of studentsToEmail) {
+        // Substitui as tags pelo conteúdo real
+        let finalMessage = messageTemplate.replace(/<nome>/g, student.name);
+        finalMessage = finalMessage.replace(/<nome do aluno>/g, student.name);
+        finalMessage = finalMessage.replace(/<data de pagamento>/gi, dueDate || '[Data Não Informada]');
 
-    // Dispara e-mails
-    for (const student of studentsToEmail) {
-      // Substitui as tags pelo conteúdo real
-      let finalMessage = messageTemplate.replace(/<nome>/g, student.name);
-      finalMessage = finalMessage.replace(/<nome do aluno>/g, student.name);
-      finalMessage = finalMessage.replace(/<data de pagamento>/gi, dueDate || '[Data Não Informada]');
+        // Constrói o HTML (bem básico, mas mantém quebras de linha)
+        const htmlBody = `
+          <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+            <h2 style="color: #1E88D9;">Prepara UMADSAL</h2>
+            <p>${finalMessage.replace(/\n/g, '<br>')}</p>
+            <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+            <p style="font-size: 0.8rem; color: #777;">Esta é uma mensagem automática, por favor não responda a este e-mail.</p>
+          </div>
+        `;
 
-      // Constrói o HTML (bem básico, mas mantém quebras de linha)
-      const htmlBody = `
-        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
-          <h2 style="color: #1E88D9;">Prepara UMADSAL</h2>
-          <p>${finalMessage.replace(/\n/g, '<br>')}</p>
-          <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0;" />
-          <p style="font-size: 0.8rem; color: #777;">Esta é uma mensagem automática, por favor não responda a este e-mail.</p>
-        </div>
-      `;
+        let subject = 'Notificação Prepara UMADSAL';
+        if (type === 'lembrete') subject = 'Lembrete de Pagamento - Prepara UMADSAL';
+        if (type === 'atraso') subject = 'Aviso de Atraso - Prepara UMADSAL';
 
-      let subject = 'Notificação Prepara UMADSAL';
-      if (type === 'lembrete') subject = 'Lembrete de Pagamento - Prepara UMADSAL';
-      if (type === 'atraso') subject = 'Aviso de Atraso - Prepara UMADSAL';
-
-      try {
-        await emailService.sendNotification(student.email, subject, htmlBody);
-        results.push({ name: student.name, success: true });
-        sentCount++;
-      } catch (err) {
-        results.push({ name: student.name, success: false, error: err.message });
+        try {
+          await emailService.sendNotification(student.email, subject, htmlBody);
+          // Pequeno delay entre e-mails para evitar bloqueio anti-spam do Google
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (err) {
+          console.error(`[Background] Falha ao enviar para ${student.name}:`, err.message);
+        }
       }
-    }
+      console.log(`[Background] Fim do envio de e-mails.`);
+    };
 
+    // Inicia a execução sem bloquear a requisição (fire and forget)
+    sendEmailsInBackground();
+
+    // Retorna imediatamente para o frontend não tomar timeout
     res.json({
       success: true,
-      message: `${sentCount} e-mail(s) processado(s).`,
-      results
+      message: `O envio para ${studentsToEmail.length} aluno(s) foi iniciado. Isso pode demorar alguns minutos em segundo plano.`,
+      results: []
     });
   } catch (error) {
     console.error('Erro ao enviar notificações:', error);

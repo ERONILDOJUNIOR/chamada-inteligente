@@ -7,10 +7,9 @@ if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
 
-// Configuração do transporter (exemplo usando Gmail/SMTP padrão)
-// O ideal é utilizar EMAIL_USER e EMAIL_PASS no .env
+// Configuração do transporter (Gmail/SMTP padrão)
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // ou especifique host/port para outro serviço
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASS || '',
@@ -27,14 +26,12 @@ const transporter = nodemailer.createTransport({
  * @returns {Promise<boolean>} Sucesso do envio
  */
 async function sendNotification(to, subject, htmlBody) {
-  // A pedido do usuário, apenas preparaumadsal@gmail.com deve receber durante os testes
+  // Apenas o e-mail de teste deve receber caso TEST_MODE seja true
   const TEST_EMAIL = 'preparaumadsal@gmail.com';
   
-  // Vamos sempre usar modo de teste por segurança até o usuário desabilitar no .env no futuro
   const isTestMode = process.env.TEST_MODE !== 'false'; 
   
   const finalRecipient = isTestMode ? TEST_EMAIL : to;
-
   const prefix = isTestMode ? `[TESTE - Destino Original: ${to}] ` : '';
 
   const mailOptions = {
@@ -45,11 +42,11 @@ async function sendNotification(to, subject, htmlBody) {
   };
 
   try {
-    // Se não tiver credenciais, apenas simula o sucesso (evita crash)
+    // Se não tiver credenciais, apenas simula o sucesso
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.warn(`\n[EMAIL MOCK] Email que seria enviado para ${finalRecipient}`);
       console.warn(`Assunto: ${mailOptions.subject}`);
-      console.warn(`Por favor, configure EMAIL_USER e EMAIL_PASS no .env para envios reais.\n`);
+      console.warn(`Configure EMAIL_USER e EMAIL_PASS no .env para envios reais.\n`);
       return true; // Fake success
     }
 
