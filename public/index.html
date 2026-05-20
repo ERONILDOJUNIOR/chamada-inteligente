@@ -518,9 +518,6 @@
         </main>
       </div><!-- /viewMatriculados -->
 
-      <!-- ============================================ -->
-      <!-- VIEW: NOTIFICAÇÕES -->
-      <!-- ============================================ -->
       <div id="viewNotificacoes" class="view-section d-none">
         <header class="app-header">
           <div class="container">
@@ -530,7 +527,7 @@
               </div>
               <div class="header-text">
                 <h1>Notificações</h1>
-                <p class="header-subtitle">Lembretes e Cobranças por E-mail</p>
+                <p class="header-subtitle">Lembretes e Cobranças por E-mail e WhatsApp</p>
               </div>
             </div>
           </div>
@@ -567,57 +564,181 @@
 
         <main class="main-content">
           <div class="container">
-            <!-- Alerta de Segurança -->
-            <div id="notificacaoTestModeAlert" class="alert alert-warning d-flex align-items-center mb-4 d-none" role="alert" style="border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #b45309;">
-              <i class="bi bi-shield-lock-fill me-3" style="font-size: 1.5rem;"></i>
-              <div>
-                <strong>MODO DE TESTE ATIVO:</strong> Por segurança, todos os e-mails serão disparados através da conta <code>eronjr17.ej@gmail.com</code> e redirecionados exclusivamente para <code>preparaumadsal@gmail.com</code>. Os alunos reais não receberão nenhuma mensagem.
-              </div>
-            </div>
 
-            <!-- Editor / Preview de Template -->
-            <div class="student-card mb-4" style="display: block; padding: 20px;">
-              <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-primary);">Preview da Mensagem</h3>
-              <textarea id="notificacaoTemplate" class="form-control glass-input" rows="8" style="font-family: monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical;"></textarea>
-              <small class="text-muted mt-2 d-block">As tags <code>&lt;nome&gt;</code> e <code>&lt;data de pagamento&gt;</code> serão substituídas automaticamente por cada aluno.</small>
-            </div>
-
-            <!-- Seleção de Alunos -->
-            <div class="student-card" style="display: block; padding: 20px;">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 style="font-size: 1.1rem; margin: 0; color: var(--text-primary);">Alunos Selecionados</h3>
-                <div class="form-check d-flex align-items-center" style="margin: 0; padding: 0;">
-                  <input class="student-select-checkbox" type="checkbox" id="chkSelectAll" checked style="width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--glass-border); accent-color: var(--accent-purple); cursor: pointer; margin: 0;">
-                  <label class="form-check-label ms-2" for="chkSelectAll" style="cursor: pointer; user-select: none; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Selecionar Todos</label>
-                </div>
-              </div>
-              
-              <div id="notificacaoEmptyState" class="empty-state py-4">
-                <i class="bi bi-people mb-2 d-block" style="font-size: 2rem; color: var(--text-muted);"></i>
-                <p>Selecione uma turma para ver os alunos.</p>
-              </div>
-
-              <div id="notificacaoLoadingState" class="loading-state d-none py-4 text-center">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-muted">Carregando alunos...</p>
-              </div>
-
-              <!-- Lista de Checkboxes -->
-              <div id="notificacaoStudentList" class="d-none" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto; padding-right: 8px;">
-                <!-- Preenchido via JS -->
-              </div>
-            </div>
-
-            <!-- Ação de Envio -->
-            <div class="text-end mt-4">
-              <button id="btnSendNotifications" class="btn btn-primary-custom" style="padding: 12px 24px; font-size: 1.1rem;">
-                <span id="btnSendNotificationsText"><i class="bi bi-send-fill me-2"></i> Enviar E-mails</span>
+            <!-- ===== ABAS: EMAIL / WHATSAPP ===== -->
+            <div class="notif-tabs-wrapper mb-4">
+              <button id="tabBtnEmail" class="notif-tab-btn active" onclick="UI.switchNotifTab('email')">
+                <i class="bi bi-envelope-fill me-2"></i>E-mail
+              </button>
+              <button id="tabBtnWpp" class="notif-tab-btn" onclick="UI.switchNotifTab('wpp')">
+                <i class="bi bi-whatsapp me-2"></i>WhatsApp
               </button>
             </div>
+
+            <!-- ============================= -->
+            <!-- PAINEL E-MAIL                 -->
+            <!-- ============================= -->
+            <div id="tabPanelEmail">
+
+              <!-- Alerta de Modo Teste (Email) -->
+              <div id="notificacaoTestModeAlert" class="alert alert-warning d-flex align-items-center mb-4 d-none" role="alert" style="border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #b45309;">
+                <i class="bi bi-shield-lock-fill me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>MODO DE TESTE ATIVO:</strong> Por segurança, todos os e-mails serão disparados através da conta <code>eronjr17.ej@gmail.com</code> e redirecionados exclusivamente para <code>preparaumadsal@gmail.com</code>. Os alunos reais não receberão nenhuma mensagem.
+                </div>
+              </div>
+
+              <!-- Editor / Preview de Template (Email) -->
+              <div class="student-card mb-4" style="display: block; padding: 20px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--text-primary);">Preview da Mensagem (E-mail)</h3>
+                <textarea id="notificacaoTemplate" class="form-control glass-input" rows="8" style="font-family: monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical;"></textarea>
+                <small class="text-muted mt-2 d-block">As tags <code>&lt;nome&gt;</code> e <code>&lt;data de pagamento&gt;</code> serão substituídas automaticamente por cada aluno.</small>
+              </div>
+
+              <!-- Seleção de Alunos (Email) -->
+              <div class="student-card" style="display: block; padding: 20px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h3 style="font-size: 1.1rem; margin: 0; color: var(--text-primary);">Alunos Selecionados (E-mail)</h3>
+                  <div class="form-check d-flex align-items-center" style="margin: 0; padding: 0;">
+                    <input class="student-select-checkbox" type="checkbox" id="chkSelectAll" checked style="width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--glass-border); accent-color: var(--accent-purple); cursor: pointer; margin: 0;">
+                    <label class="form-check-label ms-2" for="chkSelectAll" style="cursor: pointer; user-select: none; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Selecionar Todos</label>
+                  </div>
+                </div>
+
+                <div id="notificacaoEmptyState" class="empty-state py-4">
+                  <i class="bi bi-people mb-2 d-block" style="font-size: 2rem; color: var(--text-muted);"></i>
+                  <p>Selecione uma turma para ver os alunos.</p>
+                </div>
+
+                <div id="notificacaoLoadingState" class="loading-state d-none py-4 text-center">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <p class="mt-2 text-muted">Carregando alunos...</p>
+                </div>
+
+                <!-- Lista de Checkboxes (Email) -->
+                <div id="notificacaoStudentList" class="d-none" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto; padding-right: 8px;">
+                  <!-- Preenchido via JS -->
+                </div>
+              </div>
+
+              <!-- Ação de Envio (Email) -->
+              <div class="text-end mt-4">
+                <button id="btnSendNotifications" class="btn btn-primary-custom" style="padding: 12px 24px; font-size: 1.1rem;">
+                  <span id="btnSendNotificationsText"><i class="bi bi-send-fill me-2"></i> Enviar E-mails</span>
+                </button>
+              </div>
+
+            </div><!-- /tabPanelEmail -->
+
+            <!-- ============================= -->
+            <!-- PAINEL WHATSAPP               -->
+            <!-- ============================= -->
+            <div id="tabPanelWpp" class="d-none">
+
+              <!-- Alerta de Modo Teste (WhatsApp) -->
+              <div id="wppTestModeAlert" class="alert alert-warning d-flex align-items-center mb-4 d-none" role="alert" style="border-radius: var(--radius-md); background: rgba(37, 211, 102, 0.08); border-color: rgba(37, 211, 102, 0.3); color: #15803d;">
+                <i class="bi bi-shield-lock-fill me-3" style="font-size: 1.5rem; color: #22c55e;"></i>
+                <div>
+                  <strong>MODO DE TESTE WPP ATIVO:</strong> As mensagens serão enviadas para os números cadastrados na aba <code id="wppTestSheetNameLabel">TESTE NOTIFICACAO WPP</code> da planilha. Os alunos reais <strong>não receberão</strong> nenhuma mensagem.
+                </div>
+              </div>
+
+              <!-- Editor / Preview de Template (WhatsApp) -->
+              <div class="student-card mb-4" style="display: block; padding: 20px;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 4px; color: var(--text-primary);">
+                  <i class="bi bi-whatsapp text-success me-2"></i>Preview da Mensagem (WhatsApp)
+                </h3>
+                <small class="text-muted d-block mb-12" style="margin-bottom: 12px;">WhatsApp aceita texto simples. Emojis e quebras de linha são suportados.</small>
+                <textarea id="wppTemplate" class="form-control glass-input" rows="8" style="font-family: monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical;"></textarea>
+                <small class="text-muted mt-2 d-block">As tags <code>&lt;nome&gt;</code> e <code>&lt;data de pagamento&gt;</code> serão substituídas automaticamente. Limite: ~1.600 caracteres por mensagem.</small>
+              </div>
+
+              <!-- Seleção de Alunos (WhatsApp) -->
+              <div class="student-card" style="display: block; padding: 20px;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h3 style="font-size: 1.1rem; margin: 0; color: var(--text-primary);">Alunos com WhatsApp</h3>
+                  <div class="form-check d-flex align-items-center" style="margin: 0; padding: 0;">
+                    <input class="student-select-checkbox" type="checkbox" id="chkWppSelectAll" checked style="width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--glass-border); accent-color: #22c55e; cursor: pointer; margin: 0;">
+                    <label class="form-check-label ms-2" for="chkWppSelectAll" style="cursor: pointer; user-select: none; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Selecionar Todos</label>
+                  </div>
+                </div>
+
+                <div id="wppEmptyState" class="empty-state py-4">
+                  <i class="bi bi-whatsapp mb-2 d-block" style="font-size: 2rem; color: var(--text-muted);"></i>
+                  <p>Selecione uma turma para ver os alunos com número de WhatsApp.</p>
+                </div>
+
+                <div id="wppLoadingState" class="loading-state d-none py-4 text-center">
+                  <div class="spinner-border" style="color: #22c55e;" role="status"></div>
+                  <p class="mt-2 text-muted">Carregando alunos...</p>
+                </div>
+
+                <!-- Lista de Checkboxes (WhatsApp) -->
+                <div id="wppStudentList" class="d-none" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto; padding-right: 8px;">
+                  <!-- Preenchido via JS -->
+                </div>
+              </div>
+
+              <!-- Ação de Envio (WhatsApp) e Status -->
+              <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                  <button id="btnWppStatus" class="btn btn-outline-secondary btn-sm" style="border-radius: var(--radius-md);">
+                    <i class="bi bi-phone"></i> Status WPP
+                  </button>
+                </div>
+                <button id="btnSendWpp" class="btn btn-wpp-custom" style="padding: 12px 24px; font-size: 1.1rem;">
+                  <span id="btnSendWppText"><i class="bi bi-whatsapp me-2"></i> Enviar WhatsApp</span>
+                </button>
+              </div>
+
+            </div><!-- /tabPanelWpp -->
 
           </div>
         </main>
       </div><!-- /viewNotificacoes -->
+
+      <!-- ============================================ -->
+      <!-- MODAL: WhatsApp QR Code -->
+      <!-- ============================================ -->
+      <div class="modal fade" id="wppQrModal" tabindex="-1" aria-labelledby="wppQrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content glass-modal text-center">
+            <div class="modal-header">
+              <h5 class="modal-title" id="wppQrModalLabel">
+                <i class="bi bi-whatsapp text-success"></i> Conectar WhatsApp
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <div id="wppQrLoading" class="my-4">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-2 text-muted">Iniciando sessão do WhatsApp...</p>
+              </div>
+              
+              <div id="wppQrContainer" class="d-none my-3">
+                <img id="wppQrImage" src="" alt="WhatsApp QR Code" class="img-fluid rounded shadow-sm mb-3" style="max-width: 250px; background: white; padding: 10px;">
+                <p class="text-muted text-start mb-0" style="font-size: 0.85rem; line-height: 1.5; background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px;">
+                  <strong>1.</strong> Abra o WhatsApp no seu celular<br>
+                  <strong>2.</strong> Toque em Mais opções (⋮) ou Configurações (⚙️)<br>
+                  <strong>3.</strong> Toque em <em>Aparelhos conectados</em> > <em>Conectar um aparelho</em><br>
+                  <strong>4.</strong> Aponte a câmera para esta tela
+                </p>
+              </div>
+              
+              <div id="wppConnectedState" class="d-none my-4">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">WhatsApp Conectado!</h4>
+                <p class="text-muted">A sessão está ativa e pronta para enviar mensagens.</p>
+              </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-outline-danger d-none" id="btnWppLogout">
+                <i class="bi bi-box-arrow-right"></i> Desconectar Sessão
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- ============================================ -->
       <!-- MODAL: Adicionar Data -->

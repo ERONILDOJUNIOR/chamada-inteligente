@@ -11,6 +11,7 @@ const crypto = require('crypto');
 
 const attendanceRoutes = require('./routes/attendance');
 const notificationRoutes = require('./routes/notifications');
+const whatsappRoutes = require('./routes/whatsapp');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +31,8 @@ app.get('/api/config', (req, res) => {
   res.json({
     defaultSheetName: process.env.DEFAULT_SHEET_NAME || '',
     testMode: process.env.TEST_MODE !== 'false',
+    wppTestMode: process.env.WPP_TEST_MODE !== 'false',
+    wppTestSheetName: process.env.WPP_TEST_SHEET_NAME || 'TESTE NOTIFICACAO WPP',
   });
 });
 
@@ -85,6 +88,7 @@ app.use('/api', (req, res, next) => {
 // ============================================
 app.use('/api', attendanceRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 // ============================================
 // Rota catch-all para SPA (retorna index.html)
@@ -123,4 +127,8 @@ app.listen(PORT, () => {
     console.log('✅ Todas as variáveis de ambiente configuradas.');
     console.log('');
   }
+
+  // Inicializa o cliente do WhatsApp em background
+  const whatsappService = require('./services/whatsapp.service');
+  whatsappService.initialize();
 });

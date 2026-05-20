@@ -95,6 +95,45 @@ const UI = {
     btnSendNotifications: document.getElementById('btnSendNotifications'),
     btnSendNotificationsText: document.getElementById('btnSendNotificationsText'),
     notificacaoTestModeAlert: document.getElementById('notificacaoTestModeAlert'),
+
+    // WhatsApp Elements
+    wppTemplate: document.getElementById('wppTemplate'),
+    wppStudentList: document.getElementById('wppStudentList'),
+    wppEmptyState: document.getElementById('wppEmptyState'),
+    wppLoadingState: document.getElementById('wppLoadingState'),
+    chkWppSelectAll: document.getElementById('chkWppSelectAll'),
+    btnSendWpp: document.getElementById('btnSendWpp'),
+    btnSendWppText: document.getElementById('btnSendWppText'),
+    wppTestModeAlert: document.getElementById('wppTestModeAlert'),
+    wppTestSheetNameLabel: document.getElementById('wppTestSheetNameLabel'),
+    tabBtnEmail: document.getElementById('tabBtnEmail'),
+    tabBtnWpp: document.getElementById('tabBtnWpp'),
+    tabPanelEmail: document.getElementById('tabPanelEmail'),
+    tabPanelWpp: document.getElementById('tabPanelWpp'),
+
+    // WhatsApp Modal Elements
+    wppQrModal: document.getElementById('wppQrModal'),
+    wppQrLoading: document.getElementById('wppQrLoading'),
+    wppQrContainer: document.getElementById('wppQrContainer'),
+    wppQrImage: document.getElementById('wppQrImage'),
+    wppConnectedState: document.getElementById('wppConnectedState'),
+    btnWppLogout: document.getElementById('btnWppLogout'),
+    btnWppStatus: document.getElementById('btnWppStatus'),
+  },
+
+  // Instâncias de Modal
+  modals: {
+    addDate: null,
+    wppQr: null,
+  },
+
+  initModals() {
+    if (this.els.addDateModal && !this.modals.addDate) {
+      this.modals.addDate = new bootstrap.Modal(this.els.addDateModal);
+    }
+    if (this.els.wppQrModal && !this.modals.wppQr) {
+      this.modals.wppQr = new bootstrap.Modal(this.els.wppQrModal);
+    }
   },
 
   /**
@@ -876,5 +915,112 @@ const UI = {
       notificacaoTestModeAlert.classList.add('d-none');
       btnSendNotificationsText.innerHTML = '<i class="bi bi-send-fill me-2"></i> Enviar E-mails aos Alunos';
     }
-  }
+  },
+
+  // ==========================================
+  // WhatsApp UI
+  // ==========================================
+
+  /**
+   * Alterna entre as abas Email / WhatsApp
+   * @param {'email'|'wpp'} tab
+   */
+  switchNotifTab(tab) {
+    const { tabBtnEmail, tabBtnWpp, tabPanelEmail, tabPanelWpp } = this.els;
+    if (tab === 'email') {
+      tabBtnEmail.classList.add('active');
+      tabBtnWpp.classList.remove('active');
+      tabPanelEmail.classList.remove('d-none');
+      tabPanelWpp.classList.add('d-none');
+    } else {
+      tabBtnWpp.classList.add('active');
+      tabBtnEmail.classList.remove('active');
+      tabPanelWpp.classList.remove('d-none');
+      tabPanelEmail.classList.add('d-none');
+    }
+  },
+
+  showWppState(state) {
+    const { wppEmptyState, wppLoadingState, wppStudentList } = this.els;
+    wppEmptyState.classList.toggle('d-none', state !== 'empty');
+    wppLoadingState.classList.toggle('d-none', state !== 'loading');
+    if (state === 'list') {
+      wppStudentList.style.display = 'grid';
+      wppStudentList.classList.remove('d-none');
+    } else {
+      wppStudentList.style.display = 'none';
+      wppStudentList.classList.add('d-none');
+    }
+  },
+
+  renderWppStudents(students) {
+    const { wppStudentList } = this.els;
+    wppStudentList.innerHTML = '';
+
+    students.forEach((student, i) => {
+      // Só mostra alunos que têm celular
+      if (!student.phone) return;
+
+      const cleanPhone = student.phone.replace(/\D/g, '');
+
+      const div = document.createElement('div');
+      div.className = 'student-select-card student-select-card-wpp';
+
+      div.innerHTML = `
+        <label class="student-select-label" for="wpp_chk_${i}">
+          <input class="wpp-student-checkbox student-select-checkbox" type="checkbox" value="${student.name}" id="wpp_chk_${i}" checked>
+          <div class="student-select-info">
+            <span class="student-select-name">${student.name}</span>
+            <span class="student-select-email" style="color: #22c55e;"><i class="bi bi-whatsapp me-1"></i>${cleanPhone}</span>
+          </div>
+        </label>
+      `;
+
+      wppStudentList.appendChild(div);
+    });
+
+    if (wppStudentList.children.length === 0) {
+      this.showWppState('empty');
+      if (this.els.wppEmptyState) {
+        this.els.wppEmptyState.innerHTML = '<i class="bi bi-telephone-x mb-2 d-block" style="font-size:2rem;color:var(--text-muted)"></i><p class="text-warning">Nenhum aluno com número de celular cadastrado nesta turma.</p>';
+      }
+    } else {
+      if (this.els.chkWppSelectAll) {
+        this.els.chkWppSelectAll.checked = true;
+        this.els.chkWppSelectAll.indeterminate = false;
+      }
+      this.showWppState('list');
+    }
+  },
+
+  updateWppTemplate(type, dueDate) {
+    const { wppTemplate } = this.els;
+    if (!wppTemplate) return;
+    const dateStr = dueDate || 'XX/XX/XXXX';
+    let template = '';
+
+    if (type === 'lembrete') {
+      template = `Olá <nome>! 🙏\n\nAqui é a secretaria do *PREPARA UMADSAL*.\n\nPassando para te lembrar que no próximo dia *${dateStr}* é o vencimento da sua mensalidade.\n\nVocê pode pagar via PIX: @@@@@@@@@@@@@@\n\nDeus abençoe! 💙`;
+    } else if (type === 'atraso') {
+      template = `Olá <nome>! 🙏\n\nAqui é a secretaria do *PREPARA UMADSAL*.\n\nIdentificamos que seu pagamento com vencimento no dia *${dateStr}* ainda está em aberto.\n\nPor favor, regularize via PIX: @@@@@@@@@@@@@@\n\nQualquer dúvida, estamos à disposição. Deus abençoe! 💙`;
+    } else {
+      template = `Olá <nome>! 🙏\n\n[Sua mensagem aqui]\n\nAtenciosamente,\n*Equipe PREPARA UMADSAL*`;
+    }
+
+    if (type !== 'personalizada' || wppTemplate.value === '' || wppTemplate.value.includes('PREPARA UMADSAL')) {
+      wppTemplate.value = template;
+    }
+  },
+
+  setWppTestMode(isTestMode, testSheetName) {
+    const { wppTestModeAlert, wppTestSheetNameLabel, btnSendWppText } = this.els;
+    if (isTestMode) {
+      if (wppTestModeAlert) wppTestModeAlert.classList.remove('d-none');
+      if (wppTestSheetNameLabel) wppTestSheetNameLabel.textContent = testSheetName || 'TESTE NOTIFICACAO WPP';
+      if (btnSendWppText) btnSendWppText.innerHTML = '<i class="bi bi-whatsapp me-2"></i> Enviar WPP de Teste';
+    } else {
+      if (wppTestModeAlert) wppTestModeAlert.classList.add('d-none');
+      if (btnSendWppText) btnSendWppText.innerHTML = '<i class="bi bi-whatsapp me-2"></i> Enviar WhatsApp aos Alunos';
+    }
+  },
 };

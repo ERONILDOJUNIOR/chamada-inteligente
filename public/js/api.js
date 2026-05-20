@@ -211,7 +211,7 @@ const API = {
   },
 
   /**
-   * Envia Notificações
+   * Envia Notificações por E-mail
    */
   async sendNotifications(data) {
     const res = await fetch(`${this.BASE_URL}/notifications/send`, {
@@ -223,5 +223,44 @@ const API = {
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Falha ao enviar notificações');
     return result;
+  },
+
+  /**
+   * Envia Notificações por WhatsApp (whatsapp-web.js)
+   */
+  async sendWhatsAppNotifications(data) {
+    const res = await fetch(`${this.BASE_URL}/notifications/send-whatsapp`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: JSON.stringify(data),
+    });
+    this._checkAuth(res);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Falha ao enviar notificações WhatsApp');
+    return result;
+  },
+
+  /**
+   * Obtém status do WhatsApp (QR Code etc)
+   */
+  async getWhatsAppStatus() {
+    const res = await fetch(`${this.BASE_URL}/whatsapp/status`, {
+      method: 'GET',
+      headers: this._authHeaders()
+    });
+    this._checkAuth(res);
+    return res.json();
+  },
+
+  /**
+   * Desconecta o WhatsApp
+   */
+  async logoutWhatsApp() {
+    const res = await fetch(`${this.BASE_URL}/whatsapp/logout`, {
+      method: 'POST',
+      headers: this._authHeaders()
+    });
+    this._checkAuth(res);
+    return res.json();
   }
 };

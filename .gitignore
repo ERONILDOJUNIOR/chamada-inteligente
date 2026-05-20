@@ -2,3 +2,9 @@ node_modules/
 .env
 *.json.bak
 Cópia de Matricula Prepara 2026 - FINANCEIRO - 1° SEMESTRE.csv
+Cópia de Matricula Prepara 2026 - MATRICULADOS 2026.csv
+Cópia de Matricula Prepara 2026 - TESTE NOTIFICACAO WPP.csv
+
+# WhatsApp Web JS
+.wwebjs_auth/
+.wwebjs_cache/

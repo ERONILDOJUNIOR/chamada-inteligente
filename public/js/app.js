@@ -40,7 +40,11 @@
     // Estado Notificações
     notificacaoSheets: [],
     notificacaoSheetName: '',
-    notificacaoStudents: []
+    notificacaoStudents: [],
+
+    // WhatsApp
+    wppTestMode: true,
+    wppTestSheetName: 'TESTE NOTIFICACAO WPP',
   };
 
   // ============================================
@@ -165,6 +169,7 @@
   // Inicialização do app (após autenticação)
   // ============================================
   async function init() {
+    UI.initModals();
     bindEvents();
     
     // Busca a config global do backend
@@ -175,7 +180,10 @@
       const config = await configRes.json();
       state.testMode = config.testMode;
       state.defaultSheetName = config.defaultSheetName || '';
+      state.wppTestMode = config.wppTestMode !== false;
+      state.wppTestSheetName = config.wppTestSheetName || 'TESTE NOTIFICACAO WPP';
       UI.setNotificacaoTestMode(state.testMode);
+      UI.setWppTestMode(state.wppTestMode, state.wppTestSheetName);
     } catch (e) {
       console.warn('Não foi possível buscar config global:', e);
     }
@@ -331,6 +339,7 @@
 
       // Update the template based on current inputs
       UI.updateNotificacaoTemplate(UI.els.notificacaoTypeSelector.value, UI.els.notificacaoDueDate.value);
+      UI.updateWppTemplate(UI.els.notificacaoTypeSelector.value, UI.els.notificacaoDueDate.value);
 
       if (state.notificacaoSheets.length === 0) {
         loadNotificacaoSheets();
@@ -633,10 +642,12 @@
 
     UI.els.notificacaoTypeSelector.addEventListener('change', (e) => {
       UI.updateNotificacaoTemplate(e.target.value, UI.els.notificacaoDueDate.value);
+      UI.updateWppTemplate(e.target.value, UI.els.notificacaoDueDate.value);
     });
 
     UI.els.notificacaoDueDate.addEventListener('input', (e) => {
       UI.updateNotificacaoTemplate(UI.els.notificacaoTypeSelector.value, e.target.value);
+      UI.updateWppTemplate(UI.els.notificacaoTypeSelector.value, e.target.value);
     });
 
     UI.els.chkSelectAll.addEventListener('change', (e) => {
@@ -653,6 +664,147 @@
         
         UI.els.chkSelectAll.checked = (checkboxes.length === checkedBoxes.length);
         UI.els.chkSelectAll.indeterminate = (checkedBoxes.length > 0 && checkedBoxes.length < checkboxes.length);
+      }
+    });
+
+    // ---- WhatsApp: Selecionar Todos ----
+    UI.els.chkWppSelectAll.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const checkboxes = UI.els.wppStudentList.querySelectorAll('.wpp-student-checkbox');
+      checkboxes.forEach(chk => chk.checked = isChecked);
+    });
+
+    // Mantém checkbox WPP sincronizado
+    UI.els.wppStudentList.addEventListener('change', (e) => {
+      if (e.target.classList.contains('wpp-student-checkbox')) {
+        const checkboxes = UI.els.wppStudentList.querySelectorAll('.wpp-student-checkbox');
+        const checkedBoxes = UI.els.wppStudentList.querySelectorAll('.wpp-student-checkbox:checked');
+        UI.els.chkWppSelectAll.checked = (checkboxes.length === checkedBoxes.length);
+        UI.els.chkWppSelectAll.indeterminate = (checkedBoxes.length > 0 && checkedBoxes.length < checkboxes.length);
+      }
+    });
+
+    // ---- WhatsApp: Status e QR Code ----
+    let wppStatusInterval = null;
+
+    async function fetchWppStatus() {
+      try {
+        const data = await API.getWhatsAppStatus();
+        
+        UI.els.wppQrLoading.classList.add('d-none');
+        UI.els.wppQrContainer.classList.add('d-none');
+        UI.els.wppConnectedState.classList.add('d-none');
+        UI.els.btnWppLogout.classList.add('d-none');
+
+        if (data.status === 'CONNECTED') {
+          UI.els.wppConnectedState.classList.remove('d-none');
+          UI.els.btnWppLogout.classList.remove('d-none');
+          if (wppStatusInterval) {
+            clearInterval(wppStatusInterval);
+            wppStatusInterval = null;
+          }
+        } else if (data.status === 'QR_READY' && data.qrCode) {
+          UI.els.wppQrImage.src = data.qrCode;
+          UI.els.wppQrContainer.classList.remove('d-none');
+        } else {
+          UI.els.wppQrLoading.classList.remove('d-none');
+        }
+      } catch (err) {
+        console.error('Erro ao buscar status do WPP', err);
+      }
+    }
+
+    UI.els.btnWppStatus.addEventListener('click', () => {
+      UI.modals.wppQr.show();
+      UI.els.wppQrLoading.classList.remove('d-none');
+      UI.els.wppQrContainer.classList.add('d-none');
+      UI.els.wppConnectedState.classList.add('d-none');
+      UI.els.btnWppLogout.classList.add('d-none');
+      
+      fetchWppStatus();
+      
+      if (!wppStatusInterval) {
+        wppStatusInterval = setInterval(fetchWppStatus, 3000);
+      }
+    });
+
+    // Quando o modal for fechado, para o polling
+    UI.els.wppQrModal.addEventListener('hidden.bs.modal', () => {
+      if (wppStatusInterval) {
+        clearInterval(wppStatusInterval);
+        wppStatusInterval = null;
+      }
+    });
+
+    UI.els.btnWppLogout.addEventListener('click', async () => {
+      if (!confirm('Tem certeza que deseja desconectar o WhatsApp? Será necessário escanear o QR Code novamente.')) return;
+      
+      const btn = UI.els.btnWppLogout;
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Desconectando...';
+      btn.disabled = true;
+
+      try {
+        await API.logoutWhatsApp();
+        UI.showToast('WhatsApp desconectado.', 'success');
+        // Volta a consultar o status
+        fetchWppStatus();
+        if (!wppStatusInterval) {
+          wppStatusInterval = setInterval(fetchWppStatus, 3000);
+        }
+      } catch (err) {
+        UI.showToast('Erro ao desconectar.', 'error');
+      } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    });
+
+    // ---- WhatsApp: Enviar ----
+    UI.els.btnSendWpp.addEventListener('click', async () => {
+      const checkboxes = UI.els.wppStudentList.querySelectorAll('.wpp-student-checkbox:checked');
+      const selectedStudents = Array.from(checkboxes).map(chk => chk.value);
+
+      if (selectedStudents.length === 0 && !state.wppTestMode) {
+        UI.showToast('Selecione pelo menos um aluno.', 'error');
+        return;
+      }
+
+      const template = UI.els.wppTemplate.value.trim();
+      if (!template) {
+        UI.showToast('A mensagem WhatsApp não pode estar vazia.', 'error');
+        return;
+      }
+
+      const modeLabel = state.wppTestMode
+        ? `(MODO TESTE → números da aba "${state.wppTestSheetName}")`
+        : `para ${selectedStudents.length} aluno(s)`;
+      const confirmMsg = `Enviar mensagem WhatsApp ${modeLabel}?`;
+      if (!confirm(confirmMsg)) return;
+
+      const btn = UI.els.btnSendWpp;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Enviando...';
+      btn.disabled = true;
+
+      try {
+        const result = await API.sendWhatsAppNotifications({
+          sheetName: state.notificacaoSheetName,
+          messageTemplate: template,
+          dueDate: UI.els.notificacaoDueDate.value,
+          selectedStudents: selectedStudents
+        });
+
+        if (result.success) {
+          UI.showToast(`✅ ${result.message}`, 'success');
+        } else {
+          UI.showToast(result.error || 'Erro ao enviar WhatsApp', 'error');
+        }
+      } catch (err) {
+        UI.showToast(`Erro: ${err.message}`, 'error');
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
       }
     });
 
@@ -957,10 +1109,12 @@
 
   async function loadNotificacaoData(sheetName) {
     UI.showNotificacaoState('loading');
+    UI.showWppState('loading');
     try {
       const data = await API.fetchMatriculadosData(sheetName);
       if (!data.success) {
         UI.showNotificacaoState('empty');
+        UI.showWppState('empty');
         return;
       }
 
@@ -968,14 +1122,17 @@
 
       if (state.notificacaoStudents.length === 0) {
         UI.showNotificacaoState('empty');
+        UI.showWppState('empty');
         return;
       }
 
       UI.renderNotificacaoStudents(state.notificacaoStudents);
+      UI.renderWppStudents(state.notificacaoStudents);
 
     } catch (err) {
       console.error('Erro ao carregar dados para Notificações:', err);
       UI.showNotificacaoState('empty');
+      UI.showWppState('empty');
     }
   }
 
