@@ -7,9 +7,11 @@ if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
 
-// Configuração do transporter (Gmail/SMTP padrão)
+// Configuração do transporter (Gmail/SMTP)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // TLS exigido, mas inicia em texto claro antes do STARTTLS
   auth: {
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASS || '',
@@ -28,9 +30,9 @@ const transporter = nodemailer.createTransport({
 async function sendNotification(to, subject, htmlBody) {
   // Apenas o e-mail de teste deve receber caso TEST_MODE seja true
   const TEST_EMAIL = 'preparaumadsal@gmail.com';
-  
-  const isTestMode = process.env.TEST_MODE !== 'false'; 
-  
+
+  const isTestMode = process.env.TEST_MODE !== 'false';
+
   const finalRecipient = isTestMode ? TEST_EMAIL : to;
   const prefix = isTestMode ? `[TESTE - Destino Original: ${to}] ` : '';
 
