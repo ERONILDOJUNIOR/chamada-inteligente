@@ -25,10 +25,10 @@ router.post('/setup', async (req, res) => {
  * GET /api/one/students?turma=Turma+1
  * Lista alunos. Se ?turma= for enviado, filtra por turma.
  */
-router.get('/students', (req, res) => {
+router.get('/students', async (req, res) => {
   try {
     const { turma } = req.query;
-    const data = oneService.getOneStudents(turma || null);
+    const data = await oneService.getOneStudents(turma || null);
     res.json({ success: true, ...data });
   } catch (error) {
     console.error('[ONE] Erro ao buscar alunos:', error.message);

@@ -99,15 +99,18 @@ const OneVoice = (() => {
     if (state.isInitialized) {
       // Já iniciado — apenas recarrega a aba ativa
       await loadChamada();
+      await loadAlunos();
       return;
     }
     state.isInitialized = true;
 
     bindEvents();
-    renderAlunosTab();
 
-    // Carrega a chamada da turma padrão
-    await loadChamada();
+    // Carrega alunos e chamada em paralelo
+    await Promise.all([
+      loadAlunos(),
+      loadChamada()
+    ]);
   }
 
   // --------------------------------------------------
@@ -172,6 +175,10 @@ const OneVoice = (() => {
     // Ao entrar no Dashboard, carrega os dados
     if (tab === 'dashboard') {
       loadDashboard(state.dashCurrentFilter || 'total');
+    }
+    // Ao entrar na aba de Alunos, recarrega os dados dinamicamente do Sheets
+    if (tab === 'alunos') {
+      loadAlunos();
     }
   }
 
@@ -440,11 +447,41 @@ const OneVoice = (() => {
   // Aba Alunos
   // --------------------------------------------------
 
+  async function loadAlunos() {
+    try {
+      const data = await API.fetchOneStudents();
+      if (data.success) {
+        state.allStudents = data.students || [];
+        renderAlunosTab();
+      }
+    } catch (err) {
+      console.error('[ONE] Erro ao carregar alunos:', err);
+    }
+  }
+
   function renderAlunosTab() {
     const tbody = document.getElementById('oneAlunosTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = ALUNOS_STATIC.map(a => `
+    if (state.allStudents.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">
+            <i class="bi bi-people-fill fs-4 d-block mb-2"></i>
+            Nenhum aluno carregado ou tabela vazia na planilha.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    // Atualiza o contador de alunos matriculados no badge se existir
+    const badgeTotal = document.querySelector('.one-badge-total');
+    if (badgeTotal) {
+      badgeTotal.textContent = state.allStudents.length;
+    }
+
+    tbody.innerHTML = state.allStudents.map(a => `
       <tr>
         <td><span class="one-badge-num">${a.num}</span></td>
         <td class="one-aluno-nome">${a.nome}</td>

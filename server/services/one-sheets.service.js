@@ -147,12 +147,46 @@ async function setupOneSpreadsheet() {
 // -------------------------------------------------------
 
 /**
- * Retorna os alunos cadastrados (da memória, não da planilha)
+ * Retorna os alunos cadastrados lendo diretamente da aba ALUNOS na planilha
  * Pode ser filtrado por turma.
  * @param {string|null} turma - 'Turma 1', 'Turma 2' ou null para todos
  */
-function getOneStudents(turma = null) {
-  const lista = turma ? ALUNOS.filter(a => a.turma === turma) : ALUNOS;
+async function getOneStudents(turma = null) {
+  const sheets = getSheetsClient();
+  const spreadsheetId = getSpreadsheetId();
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `'ALUNOS'`,
+  });
+
+  const rows = response.data.values || [];
+  if (rows.length < 2) {
+    return { students: [] };
+  }
+
+  // Cabeçalho: N° | Nome | Turma | Telefone | Data Matrícula
+  const students = [];
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const num = parseInt(row[0], 10) || i;
+    const nome = (row[1] || '').trim();
+    const t = (row[2] || '').trim();
+    const telefone = (row[3] || '').trim().replace(/^'/, '');
+    const dataMatricula = (row[4] || '').trim();
+
+    if (!nome) continue;
+
+    students.push({
+      num,
+      nome,
+      turma: t,
+      telefone,
+      dataMatricula
+    });
+  }
+
+  const lista = turma ? students.filter(a => a.turma === turma) : students;
   return { students: lista };
 }
 
