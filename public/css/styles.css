@@ -1492,3 +1492,986 @@ button {
   border-color: rgba(37, 211, 102, 0.4) !important;
   box-shadow: 0 2px 8px rgba(37, 211, 102, 0.1) !important;
 }
+
+/* ============================================
+   ONE VOICE — Estilos dedicados
+   Paleta: Laranja #FF6B00 + Azul #1565C0
+   ============================================ */
+
+:root {
+  --one-orange: #FF6B00;
+  --one-orange-light: #FF8C33;
+  --one-orange-glow: rgba(255, 107, 0, 0.25);
+  --one-blue: #1565C0;
+  --one-blue-dark: #0D47A1;
+  --one-gradient: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
+  --one-gradient-accent: linear-gradient(135deg, #FF6B00, #FF8C33);
+}
+
+/* ---- Sidebar: item ONE ---- */
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 8px 12px;
+}
+
+.nav-item-one {
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.15), rgba(255, 140, 51, 0.1)) !important;
+  border: 1px solid rgba(255, 107, 0, 0.3) !important;
+  color: #FF8C33 !important;
+  margin-top: 4px;
+}
+
+.nav-item-one:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.25), rgba(255, 140, 51, 0.2)) !important;
+  border-color: rgba(255, 107, 0, 0.5) !important;
+  color: #FF6B00 !important;
+}
+
+.nav-item-one.active {
+  background: var(--one-gradient-accent) !important;
+  border-color: var(--one-orange) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 15px var(--one-orange-glow);
+}
+
+/* ---- ONE Header ---- */
+.one-header {
+  background: var(--one-gradient);
+  padding: 24px 0 20px;
+  border-bottom: 3px solid var(--one-orange);
+  position: relative;
+  overflow: hidden;
+}
+
+.one-header::before {
+  content: 'ONE';
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 7rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.05);
+  line-height: 1;
+  pointer-events: none;
+  font-family: 'Poppins', sans-serif;
+}
+
+.one-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.one-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.one-logo-icon {
+  width: 52px;
+  height: 52px;
+  background: var(--one-gradient-accent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: #fff;
+  box-shadow: 0 4px 16px var(--one-orange-glow);
+  flex-shrink: 0;
+}
+
+.one-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.one-subtitle {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 2px 0 0;
+  font-weight: 400;
+}
+
+.one-header-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.one-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.one-stat-pill i {
+  color: var(--one-orange-light);
+}
+
+/* ---- Sub-tabs ---- */
+.one-tabs-bar {
+  background: rgba(21, 101, 192, 0.08);
+  border-bottom: 1px solid rgba(21, 101, 192, 0.15);
+  padding: 0;
+}
+
+.one-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.one-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 14px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.one-tab-btn:hover {
+  color: var(--one-blue);
+  background: rgba(21, 101, 192, 0.05);
+}
+
+.one-tab-btn.active {
+  color: var(--one-orange);
+  border-bottom-color: var(--one-orange);
+  background: rgba(255, 107, 0, 0.04);
+}
+
+/* ---- Controles de Chamada ---- */
+.one-controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.one-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  flex: 1;
+}
+
+.one-control-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.one-select {
+  background: var(--bg-primary) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  transition: border-color 0.2s;
+}
+
+.one-select:focus {
+  border-color: var(--one-orange) !important;
+  box-shadow: 0 0 0 3px var(--one-orange-glow) !important;
+  outline: none !important;
+}
+
+.one-date-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.one-date-controls .one-select {
+  flex: 1;
+}
+
+.one-btn-add {
+  background: var(--one-gradient-accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  box-shadow: 0 3px 10px var(--one-orange-glow);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.one-btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--one-orange-glow);
+}
+
+/* ---- Date summary ---- */
+.one-date-summary-bar {
+  padding: 8px 0 12px;
+}
+
+.one-date-summary-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--one-blue);
+  background: rgba(21, 101, 192, 0.08);
+  border-radius: 20px;
+  padding: 4px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- Student Cards Grid ---- */
+.one-student-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 32px;
+}
+
+.one-student-card {
+  background: #fff;
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.one-student-card:hover {
+  border-color: rgba(21, 101, 192, 0.25);
+  box-shadow: 0 4px 12px rgba(21, 101, 192, 0.08);
+}
+
+.one-student-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.one-student-num {
+  width: 32px;
+  height: 32px;
+  background: var(--one-gradient);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.one-student-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.one-student-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.one-student-phone {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.one-student-phone i {
+  color: var(--one-orange);
+  font-size: 0.7rem;
+}
+
+/* ---- Botões P/F ---- */
+.one-attendance-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.one-att-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.one-btn-p {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.one-btn-p:hover,
+.one-btn-p.active {
+  background: var(--gradient-present);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px var(--accent-green-glow);
+  transform: translateY(-2px);
+}
+
+.one-btn-f {
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.one-btn-f:hover,
+.one-btn-f.active {
+  background: var(--gradient-absent);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px var(--accent-red-glow);
+  transform: translateY(-2px);
+}
+
+/* ---- Empty State ---- */
+.one-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+}
+
+.one-empty-state i {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 12px;
+  color: var(--glass-border);
+}
+
+/* ---- Setup Prompt ---- */
+.one-setup-prompt {
+  text-align: center;
+  padding: 48px 24px;
+  background: #fff;
+  border: 2px dashed var(--glass-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.one-setup-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  color: var(--one-orange);
+}
+
+.one-setup-btn {
+  background: var(--one-gradient-accent) !important;
+  color: #fff !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 24px !important;
+  font-weight: 700 !important;
+  margin-top: 16px;
+  box-shadow: 0 4px 15px var(--one-orange-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.one-setup-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--one-orange-glow);
+  color: #fff !important;
+}
+
+/* ---- Loading Skeletons ---- */
+.one-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.one-skeleton {
+  height: 70px;
+  background: linear-gradient(90deg, #f0f4f8 25%, #e8eef5 50%, #f0f4f8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* ---- Aba Alunos ---- */
+.one-card-wrapper {
+  background: #fff;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+.one-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.one-section-title i {
+  color: var(--one-blue);
+  font-size: 1.1rem;
+}
+
+.one-badge-total {
+  background: var(--one-gradient-accent);
+  color: #fff;
+  border-radius: 20px;
+  padding: 1px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.one-turma-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.turma1-label {
+  background: rgba(255, 107, 0, 0.1);
+  color: var(--one-orange);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+}
+
+.turma2-label {
+  background: rgba(21, 101, 192, 0.1);
+  color: var(--one-blue);
+  border: 1px solid rgba(21, 101, 192, 0.3);
+}
+
+.one-alunos-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.one-alunos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.one-alunos-table thead tr {
+  background: var(--bg-primary);
+  border-bottom: 2px solid var(--glass-border);
+}
+
+.one-alunos-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.one-alunos-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.one-alunos-table tbody tr:hover {
+  background: rgba(21, 101, 192, 0.03);
+}
+
+.one-alunos-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.one-badge-num {
+  width: 28px;
+  height: 28px;
+  background: var(--one-gradient);
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.one-aluno-nome {
+  font-weight: 600;
+}
+
+.one-badge-turma {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.one-badge-turma.turma1 {
+  background: rgba(255, 107, 0, 0.1);
+  color: var(--one-orange);
+}
+
+.one-badge-turma.turma2 {
+  background: rgba(21, 101, 192, 0.1);
+  color: var(--one-blue);
+}
+
+.one-phone-link {
+  color: #25D366;
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.one-phone-link:hover {
+  text-decoration: underline;
+  color: #128C7E;
+}
+
+.one-data-matricula {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ---- Modal ONE ---- */
+.one-modal-content {
+  background: #fff;
+  border: none;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(21, 101, 192, 0.2);
+}
+
+.one-modal-header {
+  background: var(--one-gradient);
+  color: #fff;
+  border-bottom: 2px solid var(--one-orange);
+  padding: 16px 20px;
+}
+
+.one-modal-header .modal-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.one-modal-header .modal-title i {
+  color: var(--one-orange-light);
+}
+
+.one-modal-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.one-modal-input {
+  border: 2px solid var(--glass-border) !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  padding: 10px 14px !important;
+  background: var(--bg-primary) !important;
+  transition: border-color 0.2s;
+}
+
+.one-modal-input:focus {
+  border-color: var(--one-orange) !important;
+  box-shadow: 0 0 0 3px var(--one-orange-glow) !important;
+  outline: none !important;
+}
+
+.one-modal-footer {
+  border-top: 1px solid var(--glass-border);
+  padding: 12px 20px;
+  gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.one-btn-cancel {
+  background: var(--bg-primary) !important;
+  color: var(--text-secondary) !important;
+  border: 1.5px solid var(--glass-border) !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  padding: 8px 18px !important;
+  transition: all 0.15s;
+}
+
+.one-btn-cancel:hover {
+  border-color: var(--text-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.one-btn-confirm {
+  background: var(--one-gradient-accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 700 !important;
+  padding: 8px 20px !important;
+  box-shadow: 0 3px 10px var(--one-orange-glow);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.one-btn-confirm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--one-orange-glow);
+  color: #fff !important;
+}
+
+.one-btn-confirm:disabled {
+  opacity: 0.6;
+  transform: none;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 576px) {
+  .one-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .one-header::before {
+    display: none;
+  }
+
+  .one-title {
+    font-size: 1.4rem;
+  }
+
+  .one-controls-bar {
+    flex-direction: column;
+  }
+
+  .one-control-group {
+    min-width: unset;
+  }
+
+  .one-student-name {
+    font-size: 0.85rem;
+  }
+
+  .one-att-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+
+  .one-alunos-table th,
+  .one-alunos-table td {
+    padding: 8px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ============================================
+   ONE VOICE — Dashboard
+   ============================================ */
+
+/* ---- Controles / filtro ---- */
+.one-dash-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.one-dash-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.one-dash-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.one-dash-pill {
+  background: #fff;
+  border: 1.5px solid var(--glass-border);
+  color: var(--text-secondary);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.one-dash-pill:hover {
+  border-color: var(--one-orange);
+  color: var(--one-orange);
+  background: rgba(255, 107, 0, 0.05);
+}
+
+.one-dash-pill.active {
+  background: var(--one-gradient-accent);
+  border-color: var(--one-orange);
+  color: #fff;
+  box-shadow: 0 3px 10px var(--one-orange-glow);
+}
+
+.one-dash-loading {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- 4 Cards de resumo ---- */
+.one-dash-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.one-dash-card {
+  background: #fff;
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 16px 14px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.one-dash-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.one-dash-card-total::before  { background: var(--one-gradient); }
+.one-dash-card-present::before { background: var(--gradient-present); }
+.one-dash-card-absent::before  { background: var(--gradient-absent); }
+.one-dash-card-rate::before    { background: var(--one-gradient-accent); }
+
+.one-dash-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.one-dash-card > i {
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.one-dash-card-total > i    { color: var(--one-blue); }
+.one-dash-card-present > i  { color: var(--accent-green); }
+.one-dash-card-absent > i   { color: var(--accent-red); }
+.one-dash-card-rate > i     { color: var(--one-orange); }
+
+.one-dash-card-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.one-dash-card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+/* ---- Grid dos gráficos ---- */
+.one-dash-charts-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+}
+
+.one-dash-chart-card {
+  background: #fff;
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+.one-dash-chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.one-dash-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.one-dash-chart-title i {
+  color: var(--one-orange);
+  font-size: 1rem;
+}
+
+.one-dash-chart-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  background: rgba(21, 101, 192, 0.07);
+  border-radius: 10px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.one-dash-chart-body {
+  position: relative;
+  height: 260px;
+  width: 100%;
+}
+
+/* Donut: layout com texto central sobreposto */
+.one-dash-donut-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.one-dash-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -56%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.one-dash-donut-pct {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  line-height: 1;
+}
+
+.one-dash-donut-lbl {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .one-dash-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .one-dash-chart-body {
+    height: 220px;
+  }
+}
+
+@media (max-width: 576px) {
+  .one-dash-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .one-dash-pills {
+    flex-wrap: wrap;
+  }
+}

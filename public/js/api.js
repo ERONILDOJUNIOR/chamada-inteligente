@@ -262,5 +262,74 @@ const API = {
     });
     this._checkAuth(res);
     return res.json();
-  }
+  },
+
+  // ================================================
+  // ONE VOICE
+  // ================================================
+
+  /**
+   * Inicializa a planilha ONE (setup: cria abas + popula alunos)
+   */
+  async setupOne() {
+    const res = await fetch(`${this.BASE_URL}/one/setup`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    return res.json();
+  },
+
+  /**
+   * Busca alunos do ONE. Pode filtrar por turma.
+   * @param {string|null} turma - 'Turma 1', 'Turma 2' ou null
+   */
+  async fetchOneStudents(turma = null) {
+    const url = turma
+      ? `${this.BASE_URL}/one/students?turma=${encodeURIComponent(turma)}`
+      : `${this.BASE_URL}/one/students`;
+    const res = await fetch(url, { headers: this._authHeaders() });
+    this._checkAuth(res);
+    return res.json();
+  },
+
+  /**
+   * Busca chamada de uma turma ONE
+   * @param {'Turma 1'|'Turma 2'} turma
+   */
+  async fetchOneAttendance(turma) {
+    const res = await fetch(`${this.BASE_URL}/one/attendance/${encodeURIComponent(turma)}`, {
+      headers: this._authHeaders(),
+    });
+    this._checkAuth(res);
+    return res.json();
+  },
+
+  /**
+   * Salva P/F de um aluno no ONE
+   * @param {{ turma, rowIndex, dateIndex, value }} data
+   */
+  async saveOneAttendance(data) {
+    const res = await fetch(`${this.BASE_URL}/one/attendance`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: JSON.stringify(data),
+    });
+    this._checkAuth(res);
+    return res.json();
+  },
+
+  /**
+   * Adiciona nova data de aula no ONE
+   * @param {{ turma, date }} data
+   */
+  async addOneDate(data) {
+    const res = await fetch(`${this.BASE_URL}/one/attendance/add-date`, {
+      method: 'POST',
+      headers: this._authHeaders(),
+      body: JSON.stringify(data),
+    });
+    this._checkAuth(res);
+    return res.json();
+  },
 };

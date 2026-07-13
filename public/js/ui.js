@@ -23,7 +23,7 @@ const UI = {
     toastContainer: document.getElementById('toastContainer'),
     newDateInput: document.getElementById('newDateInput'),
     btnConfirmAddDate: document.getElementById('btnConfirmAddDate'),
-    
+
     // Sidebar
     btnToggleSidebar: document.getElementById('btnToggleSidebar'),
     btnCloseSidebar: document.getElementById('btnCloseSidebar'),
@@ -32,7 +32,7 @@ const UI = {
     navDiaria: document.getElementById('navDiaria'),
     navGeral: document.getElementById('navGeral'),
     btnLogout: document.getElementById('btnLogout'),
-    
+
     // Views
     viewDashboard: document.getElementById('viewDashboard'),
     viewDiaria: document.getElementById('viewDiaria'),
@@ -43,15 +43,18 @@ const UI = {
     navFinanceiro: document.getElementById('navFinanceiro'),
     navMatriculados: document.getElementById('navMatriculados'),
     navNotificacoes: document.getElementById('navNotificacoes'),
-    
-    // Dashboard Elements
+    navOneVoice: document.getElementById('navOneVoice'),
+
+    // Views
+    viewOneVoice: document.getElementById('viewOneVoice'),
+
     dashDiarioSelector: document.getElementById('dashDiarioSelector'),
     dashGeralSelector: document.getElementById('dashGeralSelector'),
     dashFinanceiroSelector: document.getElementById('dashFinanceiroSelector'),
     chartDiarioCanvas: document.getElementById('chartDiario'),
     chartEixosCanvas: document.getElementById('chartEixos'),
     chartFinanceiroCanvas: document.getElementById('chartFinanceiro'),
-    
+
     // Geral Elements
     geralSheetSelector: document.getElementById('geralSheetSelector'),
     geralSubjectSelector: document.getElementById('geralSubjectSelector'),
@@ -368,7 +371,7 @@ const UI = {
 
     students.forEach((student, i) => {
       const att = student.attendance[subjectName] || { P: 0, F: 0 };
-      
+
       const card = document.createElement('div');
       card.className = 'student-card';
       card.style.animationDelay = `${i * 0.04}s`;
@@ -429,7 +432,7 @@ const UI = {
   // ==========================================
   // Dashboard & Charts
   // ==========================================
-  
+
   charts: {
     diario: null,
     eixos: null,
@@ -438,7 +441,7 @@ const UI = {
 
   populateDashSelectors(diarioSheets, geralSheets, financeiroSheets = []) {
     const { dashDiarioSelector, dashGeralSelector, dashFinanceiroSelector } = this.els;
-    
+
     dashDiarioSelector.innerHTML = '<option value="">Selecione a turma...</option>';
     diarioSheets.forEach(name => {
       dashDiarioSelector.appendChild(new Option(name, name));
@@ -462,7 +465,7 @@ const UI = {
 
   renderChartDiario(labels, presentData, absentData) {
     const ctx = this.els.chartDiarioCanvas.getContext('2d');
-    
+
     if (this.charts.diario) {
       this.charts.diario.destroy();
     }
@@ -502,7 +505,7 @@ const UI = {
 
   renderChartEixos(labels, presentData, absentData) {
     const ctx = this.els.chartEixosCanvas.getContext('2d');
-    
+
     if (this.charts.eixos) {
       this.charts.eixos.destroy();
     }
@@ -542,7 +545,7 @@ const UI = {
 
   renderChartFinanceiro(labels, dataPercent) {
     const ctx = this.els.chartFinanceiroCanvas.getContext('2d');
-    
+
     if (this.charts.financeiro) {
       this.charts.financeiro.destroy();
     }
@@ -580,23 +583,23 @@ const UI = {
           legend: { position: 'top', labels: { font: { family: 'Montserrat' } } },
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 return ` ${context.parsed.y}% pagos`;
               }
             }
           }
         },
         scales: {
-          y: { 
+          y: {
             beginAtZero: true,
             max: 100, // Porcentagem vai até 100
             ticks: {
-              callback: function(value) {
+              callback: function (value) {
                 return value + '%';
               }
             }
           },
-          x: { 
+          x: {
             grid: {
               display: false
             }
@@ -661,7 +664,7 @@ const UI = {
         const colIdx = monthColMap[month];
         const val = student.pagamentos[month] || '';
         const dateVal = parseDateForInput(val);
-        
+
         monthsHtml += `
           <div class="financeiro-month-input" style="display: flex; flex-direction: column; align-items: center;">
             <label style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">${month}</label>
@@ -829,7 +832,7 @@ const UI = {
     notificacaoEmptyState.classList.toggle('d-none', state !== 'empty');
     notificacaoLoadingState.classList.toggle('d-none', state !== 'loading');
     notificacaoStudentList.classList.toggle('d-none', state !== 'list');
-    
+
     // Mostra/esconde grid se for list
     if (state === 'list') {
       notificacaoStudentList.style.display = 'grid';
@@ -860,7 +863,7 @@ const UI = {
 
       const div = document.createElement('div');
       div.className = 'student-select-card';
-      
+
       div.innerHTML = `
         <label class="student-select-label" for="chk_${i}">
           <input class="student-checkbox student-select-checkbox" type="checkbox" value="${student.name}" id="chk_${i}" checked>
@@ -891,11 +894,11 @@ const UI = {
     const dateStr = dueDate || 'XX/XX/XXXX';
 
     let template = '';
-    
+
     if (type === 'lembrete') {
-      template = `Olá <nome>,\n\nAqui quem fala é o sistema de notificações do PREPARA UMADSAL.\nQueremos te lembrar que no próximo dia ${dateStr} é o pagamento da sua mensalidade.\n\nVocê pode realizar o pagamento via PIX utilizando a chave: @@@@@@@@@@@@@\n\nDeus abençoe!`;
+      template = `Olá <nome>,\n\nAqui quem fala é o sistema de notificações do PREPARA UMADSAL.\nQueremos te lembrar que no próximo dia ${dateStr} é o pagamento da sua mensalidade.\n\nVocê pode realizar o pagamento via PIX utilizando a chave: pix.umadsalmr@gmail.com\n\nDeus abençoe!`;
     } else if (type === 'atraso') {
-      template = `Olá <nome>,\n\nAqui quem fala é o sistema de notificações do PREPARA UMADSAL.\nNotamos que o seu pagamento com vencimento no dia ${dateStr} está pendente.\n\nPor favor, realize o pagamento via PIX utilizando a chave: @@@@@@@@@@@@@\n\nDeus abençoe e qualquer dúvida estamos à disposição!`;
+      template = `Olá <nome>,\n\nAqui quem fala é o sistema de notificações do PREPARA UMADSAL.\nNotamos que o seu pagamento com vencimento no dia ${dateStr} está pendente.\n\nPor favor, realize o pagamento via PIX utilizando a chave: pix.umadsalmr@gmail.com\n\nDeus abençoe e qualquer dúvida estamos à disposição!`;
     } else {
       template = `Olá <nome>,\n\n[Sua mensagem aqui]\n\nAtenciosamente,\nEquipe PREPARA UMADSAL`;
     }
@@ -1000,9 +1003,9 @@ const UI = {
     let template = '';
 
     if (type === 'lembrete') {
-      template = `Olá <nome>! 🙏\n\nAqui é a secretaria do *PREPARA UMADSAL*.\n\nPassando para te lembrar que no próximo dia *${dateStr}* é o vencimento da sua mensalidade.\n\nVocê pode pagar via PIX: @@@@@@@@@@@@@@\n\nDeus abençoe! 💙`;
+      template = `Olá <nome>! 🙏\n\nAqui é a secretaria do *PREPARA UMADSAL*.\n\nPassando para te lembrar que no próximo dia *${dateStr}* é o vencimento da sua mensalidade.\n\nVocê pode pagar via PIX: pix.umadsalmr@gmail.com \n\nDeus abençoe! 💙`;
     } else if (type === 'atraso') {
-      template = `Olá <nome>! 🙏\n\nAqui é a secretaria do *PREPARA UMADSAL*.\n\nIdentificamos que seu pagamento com vencimento no dia *${dateStr}* ainda está em aberto.\n\nPor favor, regularize via PIX: @@@@@@@@@@@@@@\n\nQualquer dúvida, estamos à disposição. Deus abençoe! 💙`;
+      template = `Olá <nome>! 🙏\n\nAqui é a secretaria do *PREPARA UMADSAL*.\n\nIdentificamos que seu pagamento com vencimento no dia *${dateStr}* ainda está em aberto.\n\nPor favor, regularize via PIX: pix.umadsalmr@gmail.com \n\nQualquer dúvida, estamos à disposição. Deus abençoe! 💙`;
     } else {
       template = `Olá <nome>! 🙏\n\n[Sua mensagem aqui]\n\nAtenciosamente,\n*Equipe PREPARA UMADSAL*`;
     }

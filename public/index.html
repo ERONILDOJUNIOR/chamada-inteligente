@@ -81,6 +81,8 @@
         <button id="navFinanceiro" class="nav-item"><i class="bi bi-currency-dollar"></i> Financeiro</button>
         <button id="navMatriculados" class="nav-item"><i class="bi bi-person-vcard"></i> Matriculados</button>
         <button id="navNotificacoes" class="nav-item"><i class="bi bi-bell-fill"></i> Notificações</button>
+        <div class="sidebar-divider"></div>
+        <button id="navOneVoice" class="nav-item nav-item-one"><i class="bi bi-music-note-beamed"></i> ONE Voice</button>
       </nav>
       <div class="sidebar-footer">
         <button id="btnLogout" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
@@ -769,7 +771,264 @@
       </div>
 
       <!-- ============================================ -->
-      <!-- TOAST NOTIFICATIONS -->
+      <!-- VIEW: ONE VOICE                              -->
+      <!-- ============================================ -->
+      <div id="viewOneVoice" class="view-section d-none">
+
+        <!-- ONE Header -->
+        <header class="one-header">
+          <div class="container">
+            <div class="one-header-content">
+              <div class="one-header-brand">
+                <div class="one-logo-icon">
+                  <i class="bi bi-music-note-beamed"></i>
+                </div>
+                <div>
+                  <h1 class="one-title">ONE Voice</h1>
+                  <p class="one-subtitle">ONE Educação Inglesa • Controle de Presença</p>
+                </div>
+              </div>
+              <div class="one-header-stats">
+                <div class="one-stat-pill">
+                  <i class="bi bi-people-fill"></i>
+                  <span>12 Alunos</span>
+                </div>
+                <div class="one-stat-pill">
+                  <i class="bi bi-calendar-week-fill"></i>
+                  <span>Segundas-feiras</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Sub-tabs -->
+        <div class="one-tabs-bar">
+          <div class="container">
+            <div class="one-tabs">
+              <button class="one-tab-btn active" data-tab="chamada">
+                <i class="bi bi-clipboard-check-fill"></i> Chamada
+              </button>
+              <button class="one-tab-btn" data-tab="alunos">
+                <i class="bi bi-people-fill"></i> Alunos
+              </button>
+              <button class="one-tab-btn" data-tab="dashboard">
+                <i class="bi bi-bar-chart-line-fill"></i> Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: CHAMADA -->
+        <div class="one-tab-pane" data-tab="chamada">
+          <div class="container" style="padding-top: 20px;">
+
+            <!-- Setup prompt (oculto por padrão) -->
+            <div id="oneSetupMsg" class="one-setup-prompt d-none">
+              <div class="one-setup-icon"><i class="bi bi-gear-wide-connected"></i></div>
+              <h4>Planilha ONE não inicializada</h4>
+              <p>Clique no botão abaixo para criar as abas e popular os alunos na planilha ONE.</p>
+              <button id="oneBtnSetup" class="btn one-setup-btn">
+                <i class="bi bi-gear-fill"></i> Configurar Planilha
+              </button>
+            </div>
+
+            <!-- Controles -->
+            <div id="oneChamadaContent">
+              <div class="one-controls-bar">
+                <!-- Seletor de Turma -->
+                <div class="one-control-group">
+                  <label for="oneTurmaSelector" class="one-control-label">
+                    <i class="bi bi-people-fill"></i> Turma
+                  </label>
+                  <select id="oneTurmaSelector" class="form-select one-select">
+                    <option value="Turma 1">1ª Turma — 18h às 19:30h</option>
+                    <option value="Turma 2">2ª Turma — 19:30h às 21h</option>
+                  </select>
+                </div>
+
+                <!-- Seletor de Data -->
+                <div class="one-control-group">
+                  <label for="oneDateSelector" class="one-control-label">
+                    <i class="bi bi-calendar-event-fill"></i> Aula
+                  </label>
+                  <div class="one-date-controls">
+                    <select id="oneDateSelector" class="form-select one-select">
+                      <option value="">Carregando...</option>
+                    </select>
+                    <button id="oneBtnNovaAula" class="btn one-btn-add" title="Adicionar nova aula">
+                      <i class="bi bi-plus-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resumo da aula atual -->
+              <div class="one-date-summary-bar">
+                <span id="oneDateSummary" class="one-date-summary-text">—</span>
+              </div>
+
+              <!-- Loading -->
+              <div id="oneLoadingState" class="one-loading d-none">
+                <div class="one-skeleton"></div>
+                <div class="one-skeleton"></div>
+                <div class="one-skeleton"></div>
+                <div class="one-skeleton"></div>
+              </div>
+
+              <!-- Cards dos alunos -->
+              <div id="oneStudentCards" class="one-student-cards-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: ALUNOS -->
+        <div class="one-tab-pane d-none" data-tab="alunos">
+          <div class="container" style="padding-top: 20px;">
+            <div class="one-card-wrapper">
+              <div class="one-section-title">
+                <i class="bi bi-person-lines-fill"></i>
+                <span>Alunos Matriculados</span>
+                <span class="one-badge-total">12</span>
+              </div>
+
+              <!-- Turma 1 -->
+              <div class="one-turma-label turma1-label">
+                <i class="bi bi-clock-fill"></i> 1ª Turma — 18h às 19:30h
+              </div>
+              <div class="one-alunos-table-wrap">
+                <table class="one-alunos-table" id="oneAlunosTable">
+                  <thead>
+                    <tr>
+                      <th>N°</th>
+                      <th>Nome</th>
+                      <th>Turma</th>
+                      <th>Telefone</th>
+                      <th>Matrícula</th>
+                    </tr>
+                  </thead>
+                  <tbody id="oneAlunosTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: DASHBOARD -->
+        <div class="one-tab-pane d-none" data-tab="dashboard">
+          <div class="container" style="padding-top: 20px; padding-bottom: 32px;">
+
+            <!-- Seletor de turma -->
+            <div class="one-dash-controls">
+              <div class="one-dash-selector-wrap">
+                <label class="one-control-label"><i class="bi bi-funnel-fill"></i> Visualizar</label>
+                <div class="one-dash-pills" id="oneDashTurmaFilter">
+                  <button class="one-dash-pill active" data-turma="total">Total</button>
+                  <button class="one-dash-pill" data-turma="Turma 1">1ª Turma</button>
+                  <button class="one-dash-pill" data-turma="Turma 2">2ª Turma</button>
+                </div>
+              </div>
+              <div id="oneDashLoading" class="one-dash-loading d-none">
+                <i class="bi bi-arrow-repeat spin"></i> Carregando...
+              </div>
+            </div>
+
+            <!-- Cards de resumo -->
+            <div class="one-dash-summary-cards" id="oneDashSummaryCards">
+              <div class="one-dash-card one-dash-card-total">
+                <i class="bi bi-people-fill"></i>
+                <div class="one-dash-card-value" id="oneDashTotalAlunos">—</div>
+                <div class="one-dash-card-label">Alunos</div>
+              </div>
+              <div class="one-dash-card one-dash-card-present">
+                <i class="bi bi-check-circle-fill"></i>
+                <div class="one-dash-card-value" id="oneDashTotalP">—</div>
+                <div class="one-dash-card-label">Presenças</div>
+              </div>
+              <div class="one-dash-card one-dash-card-absent">
+                <i class="bi bi-x-circle-fill"></i>
+                <div class="one-dash-card-value" id="oneDashTotalF">—</div>
+                <div class="one-dash-card-label">Faltas</div>
+              </div>
+              <div class="one-dash-card one-dash-card-rate">
+                <i class="bi bi-graph-up-arrow"></i>
+                <div class="one-dash-card-value" id="oneDashFreq">—</div>
+                <div class="one-dash-card-label">Frequência</div>
+              </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="one-dash-charts-grid">
+              <!-- Gráfico 1: Barras por aula -->
+              <div class="one-dash-chart-card">
+                <div class="one-dash-chart-header">
+                  <div class="one-dash-chart-title">
+                    <i class="bi bi-bar-chart-fill"></i>
+                    <span>Presenças e Faltas por Aula</span>
+                  </div>
+                  <span class="one-dash-chart-sub" id="oneDashBarSubtitle">—</span>
+                </div>
+                <div class="one-dash-chart-body">
+                  <canvas id="oneDashBarChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Gráfico 2: Donut de frequência -->
+              <div class="one-dash-chart-card">
+                <div class="one-dash-chart-header">
+                  <div class="one-dash-chart-title">
+                    <i class="bi bi-pie-chart-fill"></i>
+                    <span>Frequência Geral</span>
+                  </div>
+                  <span class="one-dash-chart-sub" id="oneDashDonutSubtitle">—</span>
+                </div>
+                <div class="one-dash-chart-body one-dash-donut-body">
+                  <canvas id="oneDashDonutChart"></canvas>
+                  <div class="one-dash-donut-center" id="oneDashDonutCenter">
+                    <span class="one-dash-donut-pct" id="oneDashDonutPct">—</span>
+                    <span class="one-dash-donut-lbl">frequência</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div><!-- /TAB: DASHBOARD -->
+
+      </div><!-- /viewOneVoice -->
+
+      <!-- ============================================ -->
+      <!-- MODAL: Nova Aula ONE                        -->
+      <!-- ============================================ -->
+      <div class="modal fade" id="oneNovaAulaModal" tabindex="-1" aria-labelledby="oneNovaAulaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content one-modal-content">
+            <div class="modal-header one-modal-header">
+              <h5 class="modal-title" id="oneNovaAulaModalLabel">
+                <i class="bi bi-calendar-plus-fill"></i> Nova Aula
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <p class="one-modal-desc">A data será adicionada em ambas as turmas (Turma 1 e Turma 2).</p>
+              <label for="oneNewDateInput" class="form-label one-control-label">
+                <i class="bi bi-calendar-event-fill"></i> Data da aula
+              </label>
+              <input type="text" id="oneNewDateInput" class="form-control one-modal-input" placeholder="Ex: 20/07">
+              <small class="text-muted mt-2 d-block">Formato DD/MM — ex: 20/07</small>
+            </div>
+            <div class="modal-footer one-modal-footer">
+              <button type="button" class="btn one-btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn one-btn-confirm" id="oneBtnConfirmarData">
+                <i class="bi bi-check-lg"></i> Adicionar Aula
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================ -->
+      <!-- TOAST NOTIFICATIONS                         -->
       <!-- ============================================ -->
       <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"
         style="z-index: 9999; margin-bottom: 80px;"></div>
@@ -795,6 +1054,7 @@
   <script src="js/api.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/one.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>

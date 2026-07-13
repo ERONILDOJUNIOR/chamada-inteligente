@@ -219,6 +219,7 @@
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
       UI.els.navNotificacoes.classList.remove('active');
+      UI.els.navOneVoice.classList.remove('active');
       
       UI.els.viewDashboard.classList.remove('d-none');
       UI.els.viewDiaria.classList.add('d-none');
@@ -226,6 +227,7 @@
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
       UI.els.viewNotificacoes.classList.add('d-none');
+      UI.els.viewOneVoice.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -241,6 +243,7 @@
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
       UI.els.navNotificacoes.classList.remove('active');
+      UI.els.navOneVoice.classList.remove('active');
       
       UI.els.viewDiaria.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
@@ -248,6 +251,7 @@
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
       UI.els.viewNotificacoes.classList.add('d-none');
+      UI.els.viewOneVoice.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
       
@@ -261,6 +265,7 @@
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
       UI.els.navNotificacoes.classList.remove('active');
+      UI.els.navOneVoice.classList.remove('active');
       
       UI.els.viewGeral.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
@@ -268,6 +273,7 @@
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
       UI.els.viewNotificacoes.classList.add('d-none');
+      UI.els.viewOneVoice.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -283,6 +289,7 @@
       UI.els.navGeral.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
       UI.els.navNotificacoes.classList.remove('active');
+      UI.els.navOneVoice.classList.remove('active');
       
       UI.els.viewFinanceiro.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
@@ -290,6 +297,7 @@
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
       UI.els.viewNotificacoes.classList.add('d-none');
+      UI.els.viewOneVoice.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -305,6 +313,7 @@
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navNotificacoes.classList.remove('active');
+      UI.els.navOneVoice.classList.remove('active');
       
       UI.els.viewMatriculados.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
@@ -312,6 +321,7 @@
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewNotificacoes.classList.add('d-none');
+      UI.els.viewOneVoice.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -327,6 +337,7 @@
       UI.els.navGeral.classList.remove('active');
       UI.els.navFinanceiro.classList.remove('active');
       UI.els.navMatriculados.classList.remove('active');
+      UI.els.navOneVoice.classList.remove('active');
       
       UI.els.viewNotificacoes.classList.remove('d-none');
       UI.els.viewDashboard.classList.add('d-none');
@@ -334,6 +345,7 @@
       UI.els.viewGeral.classList.add('d-none');
       UI.els.viewFinanceiro.classList.add('d-none');
       UI.els.viewMatriculados.classList.add('d-none');
+      UI.els.viewOneVoice.classList.add('d-none');
       
       UI.els.sidebar.classList.remove('show');
 
@@ -344,6 +356,30 @@
       if (state.notificacaoSheets.length === 0) {
         loadNotificacaoSheets();
       }
+    });
+
+    // ---- ONE Voice ----
+    UI.els.navOneVoice.addEventListener('click', () => {
+      UI.els.navOneVoice.classList.add('active');
+      UI.els.navDashboard.classList.remove('active');
+      UI.els.navDiaria.classList.remove('active');
+      UI.els.navGeral.classList.remove('active');
+      UI.els.navFinanceiro.classList.remove('active');
+      UI.els.navMatriculados.classList.remove('active');
+      UI.els.navNotificacoes.classList.remove('active');
+
+      UI.els.viewOneVoice.classList.remove('d-none');
+      UI.els.viewDashboard.classList.add('d-none');
+      UI.els.viewDiaria.classList.add('d-none');
+      UI.els.viewGeral.classList.add('d-none');
+      UI.els.viewFinanceiro.classList.add('d-none');
+      UI.els.viewMatriculados.classList.add('d-none');
+      UI.els.viewNotificacoes.classList.add('d-none');
+
+      UI.els.sidebar.classList.remove('show');
+
+      // Inicializa o módulo ONE Voice
+      OneVoice.init();
     });
 
     // Seleção de turma

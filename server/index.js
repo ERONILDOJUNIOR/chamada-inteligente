@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const attendanceRoutes = require('./routes/attendance');
 const notificationRoutes = require('./routes/notifications');
 const whatsappRoutes = require('./routes/whatsapp');
+const oneRoutes = require('./routes/one');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -89,6 +90,7 @@ app.use('/api', (req, res, next) => {
 app.use('/api', attendanceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/one', oneRoutes);
 
 // ============================================
 // Rota catch-all para SPA (retorna index.html)
