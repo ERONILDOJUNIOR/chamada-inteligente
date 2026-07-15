@@ -481,6 +481,12 @@ const OneVoice = (() => {
       badgeTotal.textContent = state.allStudents.length;
     }
 
+    // Atualiza o contador no header do módulo ONE
+    const headerCount = document.getElementById('oneHeaderAlunosCount');
+    if (headerCount) {
+      headerCount.textContent = `${state.allStudents.length} Aluno${state.allStudents.length !== 1 ? 's' : ''}`;
+    }
+
     tbody.innerHTML = state.allStudents.map(a => `
       <tr>
         <td><span class="one-badge-num">${a.num}</span></td>
