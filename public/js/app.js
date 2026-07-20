@@ -521,7 +521,7 @@
       if (!subject) {
         UI.showGeralState('empty');
       } else {
-        UI.renderGeralStudents(state.geralStudents, subject);
+        UI.renderGeralStudents(state.geralStudents, subject, state.geralReadonly || false);
       }
     });
 
@@ -895,25 +895,19 @@
   // ============================================
   async function loadSheets() {
     try {
-      const defaultSheet = state.defaultSheetName || '';
+      // CHAMADA OFICIAL é a única fonte de dados — carrega direto sem seletor
+      const targetSheet = 'CHAMADA OFICIAL';
+      state.currentSheet = targetSheet;
 
-      const data = await API.fetchSheets();
-      if (data.success && data.sheets.length > 0) {
-        UI.populateSheets(data.sheets);
+      // Oculta o seletor de turma (não é mais necessário)
+      const sheetSelectorGroup = UI.els.sheetSelector
+        ? UI.els.sheetSelector.closest('.control-group')
+        : null;
+      if (sheetSelectorGroup) sheetSelectorGroup.style.display = 'none';
 
-        // Auto-seleciona a aba padrão se existir, senão seleciona a primeira
-        const targetSheet = defaultSheet && data.sheets.includes(defaultSheet)
-          ? defaultSheet
-          : data.sheets[0];
-
-        UI.els.sheetSelector.value = targetSheet;
-        state.currentSheet = targetSheet;
-        await loadAttendanceData(targetSheet);
-      } else {
-        UI.showError('Nenhuma aba encontrada na planilha.');
-      }
+      await loadAttendanceData(targetSheet);
     } catch (err) {
-      console.error('Erro ao carregar turmas:', err);
+      console.error('Erro ao carregar chamada:', err);
       UI.showError('Não foi possível conectar à planilha. Verifique as configurações.');
     }
   }
@@ -956,22 +950,20 @@
   // ============================================
   async function loadGeralSheets() {
     try {
-      const data = await API.fetchGeralSheets();
-      if (data.success && data.sheets.length > 0) {
-        state.geralSheets = data.sheets;
-        UI.populateGeralSheets(data.sheets);
-        
-        // Auto seleciona a primeira aba
-        const targetSheet = data.sheets[0];
-        UI.els.geralSheetSelector.value = targetSheet;
-        state.geralSheetName = targetSheet;
-        await loadGeralData(targetSheet);
-      } else {
-        UI.showGeralState('error');
-        UI.els.geralErrorMessage.textContent = 'Nenhuma aba "Chamada Geral" encontrada.';
-      }
+      // Dados da Chamada Geral são calculados a partir da CHAMADA OFICIAL
+      const targetSheet = 'CHAMADA OFICIAL';
+      state.geralSheets = [targetSheet];
+      state.geralSheetName = targetSheet;
+
+      // Oculta o seletor de turma da Chamada Geral (só existe uma fonte)
+      const geralSheetSelectorGroup = UI.els.geralSheetSelector
+        ? UI.els.geralSheetSelector.closest('.control-group')
+        : null;
+      if (geralSheetSelectorGroup) geralSheetSelectorGroup.style.display = 'none';
+
+      await loadGeralData(targetSheet);
     } catch (err) {
-      console.error('Erro ao carregar abas da Chamada Geral:', err);
+      console.error('Erro ao carregar Chamada Geral:', err);
       UI.showGeralState('error');
       UI.els.geralErrorMessage.textContent = 'Não foi possível conectar à planilha.';
     }
@@ -989,22 +981,23 @@
 
       state.geralSubjects = data.subjects;
       state.geralStudents = data.students;
+      state.geralReadonly = data.readonly || false;
 
       if (state.geralSubjects.length === 0) {
         UI.showGeralState('error');
-        UI.els.geralErrorMessage.textContent = 'Nenhuma disciplina encontrada na aba CHAMADA GERAL.';
+        UI.els.geralErrorMessage.textContent = 'Nenhuma disciplina encontrada.';
         return;
       }
 
       UI.populateGeralSubjects(state.geralSubjects);
-      
+
       // Auto-seleciona a primeira disciplina se não houver seleção
-      if (!state.currentSubject) {
+      if (!state.currentSubject || !state.geralSubjects.includes(state.currentSubject)) {
         state.currentSubject = state.geralSubjects[0];
         UI.els.geralSubjectSelector.value = state.currentSubject;
       }
-      
-      UI.renderGeralStudents(state.geralStudents, state.currentSubject);
+
+      UI.renderGeralStudents(state.geralStudents, state.currentSubject, state.geralReadonly);
 
     } catch (err) {
       console.error('Erro ao carregar dados gerais:', err);
@@ -1177,39 +1170,45 @@
   // ============================================
   async function loadDashboardData() {
     try {
-      // Fetch available sheets for both contexts in parallel
-      const [diarioRes, geralRes, financeiroRes] = await Promise.all([
-        API.fetchSheets(),
-        API.fetchGeralSheets(),
-        API.fetchFinanceiroSheets()
-      ]);
+      // Chamada Diária e Chamada Geral usam CHAMADA OFICIAL como única fonte
+      const OFICIAL = 'CHAMADA OFICIAL';
+      state.dashDiarioSheets = [OFICIAL];
+      state.dashGeralSheets  = [OFICIAL];
 
-      if (diarioRes.success) state.dashDiarioSheets = diarioRes.sheets;
-      if (geralRes.success) state.dashGeralSheets = geralRes.sheets;
       let financeiroSheets = [];
-      if (financeiroRes.success) financeiroSheets = financeiroRes.sheets;
+      try {
+        const financeiroRes = await API.fetchFinanceiroSheets();
+        if (financeiroRes.success) financeiroSheets = financeiroRes.sheets;
+      } catch (_) {}
 
-      UI.populateDashSelectors(state.dashDiarioSheets, state.dashGeralSheets, financeiroSheets);
+      // Oculta seletores dos gráficos de chamada (único dataset)
+      if (UI.els.dashDiarioSelector) {
+        const grp = UI.els.dashDiarioSelector.closest('.control-group');
+        if (grp) grp.style.display = 'none';
+      }
+      if (UI.els.dashGeralSelector) {
+        const grp = UI.els.dashGeralSelector.closest('.control-group');
+        if (grp) grp.style.display = 'none';
+      }
 
-      // Render initial charts if sheets are available
-      if (state.dashDiarioSheets.length > 0) {
-        UI.els.dashDiarioSelector.value = state.dashDiarioSheets[0];
-        await renderChartDiarioForSheet(state.dashDiarioSheets[0]);
-      }
-      
-      if (state.dashGeralSheets.length > 0) {
-        UI.els.dashGeralSelector.value = state.dashGeralSheets[0];
-        await renderChartEixosForSheet(state.dashGeralSheets[0]);
-      }
+      UI.populateDashSelectors([OFICIAL], [OFICIAL], financeiroSheets);
+
+      // Renderiza gráficos com CHAMADA OFICIAL
+      await Promise.all([
+        renderChartDiarioForSheet(OFICIAL),
+        renderChartEixosForSheet(OFICIAL),
+        financeiroSheets.length > 0
+          ? renderChartFinanceiroForSheet(financeiroSheets[0])
+          : Promise.resolve(),
+      ]);
 
       if (financeiroSheets.length > 0) {
         UI.els.dashFinanceiroSelector.value = financeiroSheets[0];
-        await renderChartFinanceiroForSheet(financeiroSheets[0]);
       }
 
     } catch (err) {
       console.error('Erro ao carregar dados do Dashboard', err);
-      UI.showToast('Erro ao carregar turmas para o Dashboard', 'error');
+      UI.showToast('Erro ao carregar dados do Dashboard', 'error');
     }
   }
 

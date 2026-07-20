@@ -365,12 +365,14 @@ const UI = {
     geralSearchInput.disabled = false;
   },
 
-  renderGeralStudents(students, subjectName) {
+  renderGeralStudents(students, subjectName, readonly) {
     const { geralStudentList } = this.els;
     geralStudentList.innerHTML = '';
 
     students.forEach((student, i) => {
       const att = student.attendance[subjectName] || { P: 0, F: 0 };
+      const totalAulas = att.P + att.F;
+      const pct = totalAulas > 0 ? Math.round((att.P / totalAulas) * 100) : 0;
 
       const card = document.createElement('div');
       card.className = 'student-card';
@@ -378,36 +380,65 @@ const UI = {
       card.dataset.rowIndex = student.rowIndex;
       card.dataset.name = student.name.toLowerCase();
 
-      card.innerHTML = `
-        <div class="student-info" style="flex-wrap: wrap; gap: 16px;">
-          <div class="student-name-section" style="min-width: 200px; flex: 1;">
-            <div class="student-avatar">${this.getInitials(student.name)}</div>
-            <div>
-              <div class="student-name" title="${student.name}">${student.name}</div>
-              <div class="student-status">Eixo: ${subjectName}</div>
-            </div>
-          </div>
-          
-          <div class="geral-controls-group">
-            <div class="geral-counter">
-              <span class="geral-counter-label text-success">Presenças</span>
-              <div class="geral-counter-controls">
-                <button class="btn-counter btn-geral-action" data-action="decrement" data-type="P" data-row="${student.rowIndex}">-</button>
-                <span class="counter-value" id="val_P_${student.rowIndex}">${att.P}</span>
-                <button class="btn-counter btn-geral-action" data-action="increment" data-type="P" data-row="${student.rowIndex}">+</button>
+      if (readonly) {
+        // Versão somente leitura (CHAMADA OFICIAL): exibe contadores como texto
+        card.innerHTML = `
+          <div class="student-info" style="flex-wrap: wrap; gap: 16px;">
+            <div class="student-name-section" style="min-width: 200px; flex: 1;">
+              <div class="student-avatar">${this.getInitials(student.name)}</div>
+              <div>
+                <div class="student-name" title="${student.name}">${student.name}</div>
+                <div class="student-status">${subjectName}</div>
               </div>
             </div>
-            <div class="geral-counter">
-              <span class="geral-counter-label text-danger">Faltas</span>
-              <div class="geral-counter-controls">
-                <button class="btn-counter btn-geral-action" data-action="decrement" data-type="F" data-row="${student.rowIndex}">-</button>
-                <span class="counter-value" id="val_F_${student.rowIndex}">${att.F}</span>
-                <button class="btn-counter btn-geral-action" data-action="increment" data-type="F" data-row="${student.rowIndex}">+</button>
+            <div class="geral-controls-group" style="align-items: center; gap: 20px;">
+              <div style="text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 700; color: var(--success-color, #22c55e);">${att.P}</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Presenças</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 700; color: var(--error-color, #ef4444);">${att.F}</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Faltas</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">${pct}%</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Freq.</div>
               </div>
             </div>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        // Versão editável (Chamada Geral legada): exibe contadores com botões +/-
+        card.innerHTML = `
+          <div class="student-info" style="flex-wrap: wrap; gap: 16px;">
+            <div class="student-name-section" style="min-width: 200px; flex: 1;">
+              <div class="student-avatar">${this.getInitials(student.name)}</div>
+              <div>
+                <div class="student-name" title="${student.name}">${student.name}</div>
+                <div class="student-status">Eixo: ${subjectName}</div>
+              </div>
+            </div>
+            <div class="geral-controls-group">
+              <div class="geral-counter">
+                <span class="geral-counter-label text-success">Presenças</span>
+                <div class="geral-counter-controls">
+                  <button class="btn-counter btn-geral-action" data-action="decrement" data-type="P" data-row="${student.rowIndex}">-</button>
+                  <span class="counter-value" id="val_P_${student.rowIndex}">${att.P}</span>
+                  <button class="btn-counter btn-geral-action" data-action="increment" data-type="P" data-row="${student.rowIndex}">+</button>
+                </div>
+              </div>
+              <div class="geral-counter">
+                <span class="geral-counter-label text-danger">Faltas</span>
+                <div class="geral-counter-controls">
+                  <button class="btn-counter btn-geral-action" data-action="decrement" data-type="F" data-row="${student.rowIndex}">-</button>
+                  <span class="counter-value" id="val_F_${student.rowIndex}">${att.F}</span>
+                  <button class="btn-counter btn-geral-action" data-action="increment" data-type="F" data-row="${student.rowIndex}">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
       geralStudentList.appendChild(card);
     });
