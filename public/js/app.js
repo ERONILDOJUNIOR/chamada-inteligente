@@ -1379,13 +1379,13 @@
 
   /**
    * Classifica o status do aluno:
-   * 🔴 Crítico  — ≥ 3 em qualquer critério
-   * 🟡 Atenção  — ≥ 2 em qualquer critério
-   * 🟢 Regular  — demais
+   * 🔴 Crítico  — > 6 faltas (7 ou mais)
+   * 🟡 Atenção  — 4 a 6 faltas
+   * 🟢 Regular  — menos de 4 faltas
    */
   function calcStatusDash({ totalFaltas, maxConsecutivas, desdeUltimaPresenca }) {
-    if (totalFaltas >= 3 || maxConsecutivas >= 3 || desdeUltimaPresenca >= 3) return 'red';
-    if (totalFaltas >= 2 || maxConsecutivas >= 2 || desdeUltimaPresenca >= 2) return 'yellow';
+    if (totalFaltas >= 7 || maxConsecutivas >= 7 || desdeUltimaPresenca >= 7) return 'red';
+    if (totalFaltas >= 4 || maxConsecutivas >= 4 || desdeUltimaPresenca >= 4) return 'yellow';
     return 'green';
   }
 
