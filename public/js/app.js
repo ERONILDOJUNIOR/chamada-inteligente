@@ -1193,15 +1193,17 @@
 
       UI.populateDashSelectors([OFICIAL], [OFICIAL], financeiroSheets);
 
-      // Renderiza gráficos com CHAMADA OFICIAL
+      // Renderiza gráficos com CHAMADA OFICIAL (ranking é carregado lazy ao clicar na aba)
       await Promise.all([
         renderChartDiarioForSheet(OFICIAL),
         renderChartEixosForSheet(OFICIAL),
         financeiroSheets.length > 0
           ? renderChartFinanceiroForSheet(financeiroSheets[0])
           : Promise.resolve(),
-        renderDashRanking(OFICIAL),
       ]);
+
+      // Guarda a referência da sheet para o ranking (carregado quando usuário acessa a aba)
+      state.dashOFICIALSheet = OFICIAL;
 
       if (financeiroSheets.length > 0) {
         UI.els.dashFinanceiroSelector.value = financeiroSheets[0];
@@ -1293,6 +1295,49 @@
       console.error('Erro ao renderizar gráfico financeiro', err);
     }
   }
+
+  // ============================================
+  // Tabs do Dashboard (Gráficos / Ranking)
+  // ============================================
+
+  let _dashRankingLoaded = false;
+  let _dashPlanilhaLoaded = false;
+
+  function switchDashTab(tab) {
+    // Atualiza botões
+    document.querySelectorAll('.dash-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    // Mostra/oculta panes
+    document.querySelectorAll('.dash-tab-pane').forEach(pane => {
+      pane.classList.toggle('d-none', pane.dataset.tab !== tab);
+    });
+    // Carrega ranking lazy na primeira visita
+    if (tab === 'ranking' && !_dashRankingLoaded) {
+      const sheet = state.dashOFICIALSheet || 'CHAMADA OFICIAL';
+      renderDashRanking(sheet).then(() => { _dashRankingLoaded = true; });
+    }
+    // Carrega planilha lazy na primeira visita
+    if (tab === 'planilha' && !_dashPlanilhaLoaded) {
+      const sheet = state.dashOFICIALSheet || 'CHAMADA OFICIAL';
+      renderDashPlanilha(sheet).then(() => { _dashPlanilhaLoaded = true; });
+    }
+  }
+
+  function bindDashTabEvents() {
+    document.querySelectorAll('.dash-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchDashTab(btn.dataset.tab));
+    });
+  }
+
+  // Inicializa os listeners quando o DOM estiver pronto
+  (function initDashTabs() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindDashTabEvents);
+    } else {
+      bindDashTabEvents();
+    }
+  })();
 
   // ============================================
   // Ranking de Frequência — Dashboard Prepara
@@ -1426,6 +1471,67 @@
       if (loadingEl) loadingEl.classList.add('d-none');
     }
   }
+
+  /**
+   * Busca e renderiza a planilha completa (CHAMADA OFICIAL) no estilo Google Sheets.
+   */
+  async function renderDashPlanilha(sheetName) {
+    const loadingEl = document.getElementById('dashPlanilhaLoading');
+    const tableEl   = document.getElementById('dashPlanilhaTable');
+    const thead     = document.getElementById('dashPlanilhaTableHead');
+    const tbody     = document.getElementById('dashPlanilhaTableBody');
+    const emptyEl   = document.getElementById('dashPlanilhaEmpty');
+
+    if (!tbody || !thead) return;
+
+    if (loadingEl) loadingEl.classList.remove('d-none');
+    if (tableEl)   tableEl.style.display = 'none';
+
+    try {
+      const data = await API.fetchAttendance(sheetName);
+      if (!data.success || !data.students || data.students.length === 0) {
+        if (tableEl)   tableEl.style.display = 'none';
+        if (emptyEl)   emptyEl.classList.remove('d-none');
+        return;
+      }
+
+      const dates = data.headers || [];
+
+      // 1. Renderiza o cabeçalho (thead)
+      let headHtml = '<tr><th>Aluno</th>';
+      dates.forEach(date => {
+        headHtml += `<th>${date}</th>`;
+      });
+      headHtml += '</tr>';
+      thead.innerHTML = headHtml;
+
+      // 2. Renderiza as linhas dos alunos (tbody)
+      tbody.innerHTML = data.students.map(student => {
+        let rowHtml = `<tr><td>${student.name}</td>`;
+        dates.forEach(date => {
+          const val = (student.attendance[date] || '').toUpperCase();
+          if (val === 'P') {
+            rowHtml += '<td class="sheet-cell-p">P</td>';
+          } else if (val === 'F') {
+            rowHtml += '<td class="sheet-cell-f">F</td>';
+          } else {
+            rowHtml += '<td class="sheet-cell-empty">-</td>';
+          }
+        });
+        rowHtml += '</tr>';
+        return rowHtml;
+      }).join('');
+
+      if (emptyEl) emptyEl.classList.add('d-none');
+      if (tableEl) tableEl.style.display = '';
+
+    } catch (err) {
+      console.error('[Dash Planilha] Erro:', err);
+    } finally {
+      if (loadingEl) loadingEl.classList.add('d-none');
+    }
+  }
+
 
   // ============================================
   // Boot quando DOM estiver pronto

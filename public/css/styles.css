@@ -2634,7 +2634,10 @@ button {
   background: #fff;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* overflow-x: auto para scroll horizontal em telas pequenas */
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
 
@@ -2902,4 +2905,94 @@ tr.rank-green .one-rank-pos {
   .one-ranking-table tbody td.col-since {
     display: none;
   }
+}
+
+/* ============================================
+   VISUALIZAÇÃO DE PLANILHA (ESTILO GOOGLE SHEETS)
+   ============================================ */
+.spreadsheet-table {
+  border-collapse: separate !important; /* Necessário para sticky border */
+  border-spacing: 0;
+  min-width: 100%;
+}
+
+.spreadsheet-table thead tr {
+  background: #f1f3f4 !important; /* Cor do cabeçalho do Sheets */
+}
+
+.spreadsheet-table thead th {
+  color: #3c4043 !important;
+  font-weight: 600;
+  border-bottom: 2px solid #bdc1c6 !important;
+  border-right: 1px solid #bdc1c6 !important;
+  background: #f1f3f4;
+  padding: 8px 12px !important;
+  text-align: center !important;
+  font-size: 0.8rem !important;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Primeira coluna sticky (Nome do aluno) */
+.spreadsheet-table thead th:first-child,
+.spreadsheet-table tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  text-align: left !important;
+  border-right: 2px solid #bdc1c6 !important;
+  min-width: 200px;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+.spreadsheet-table thead th:first-child {
+  background: #f1f3f4 !important;
+}
+
+.spreadsheet-table tbody td {
+  border-bottom: 1px solid #e0e0e0 !important;
+  border-right: 1px solid #e0e0e0 !important;
+  padding: 8px 12px !important;
+  text-align: center;
+  font-size: 0.85rem;
+  background: #ffffff;
+}
+
+/* Garante background correto para a primeira coluna sticky das linhas normais */
+.spreadsheet-table tbody tr td:first-child {
+  background: #f8f9fa !important;
+  font-weight: 500;
+}
+
+.spreadsheet-table tbody tr:hover td {
+  background: #f1f3f4 !important;
+}
+
+.spreadsheet-table tbody tr:hover td:first-child {
+  background: #e8eaed !important;
+}
+
+/* Estilização das células de presença */
+.sheet-cell-p {
+  background-color: #e6f4ea !important; /* Verde suave do Sheets */
+  color: #137333 !important;
+  font-weight: 700;
+}
+
+.sheet-cell-f {
+  background-color: #fce8e6 !important; /* Vermelho suave do Sheets */
+  color: #c5221f !important;
+  font-weight: 700;
+}
+
+.sheet-cell-empty {
+  background-color: #f8f9fa !important;
+  color: #9aa0a6 !important;
+  font-style: italic;
+  font-size: 0.75rem;
 }
