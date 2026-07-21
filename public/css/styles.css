@@ -215,7 +215,7 @@ button {
    MAIN CONTENT
    ============================================ */
 .main-content {
-  padding: 16px 0;
+  padding: 16px 0 90px;
 }
 
 /* Empty State */
@@ -510,6 +510,13 @@ button {
   border-top: 1px solid var(--glass-border);
   padding: 12px 0;
   z-index: 200;
+  transition: left var(--transition-normal);
+}
+
+@media (min-width: 768px) {
+  .summary-bar {
+    left: 260px;
+  }
 }
 
 .summary-content {
