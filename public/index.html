@@ -161,6 +161,98 @@
                 <canvas id="chartFinanceiro"></canvas>
               </div>
             </div>
+            <!-- Ranking de Frequência — Prepara UMADSAL -->
+            <div class="student-card" style="display: block; padding: 0; margin-top: 24px; overflow: hidden;">
+
+              <!-- Header do card -->
+              <div style="padding: 18px 20px 14px; border-bottom: 1px solid var(--glass-border);">
+                <div class="one-ranking-header" style="margin-bottom: 0;">
+                  <div class="one-ranking-header-left">
+                    <div class="one-ranking-icon-wrap">
+                      <i class="bi bi-trophy-fill"></i>
+                    </div>
+                    <div>
+                      <h2 class="one-ranking-title">Ranking de Frequência</h2>
+                      <p class="one-ranking-subtitle">Teologia — Prepara UMADSAL • Alunos mais críticos no topo</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Legenda -->
+              <div style="padding: 14px 20px 0;">
+                <div class="one-ranking-legend" style="margin-bottom: 14px;">
+                  <div class="one-legend-title"><i class="bi bi-info-circle-fill"></i> Como interpretar o ranking</div>
+                  <div class="one-legend-items">
+                    <div class="one-legend-item one-legend-red">
+                      <div class="one-legend-dot"></div>
+                      <div class="one-legend-text"><strong>Crítico</strong> — Situação de frequência grave. Necessita atenção urgente.</div>
+                    </div>
+                    <div class="one-legend-item one-legend-yellow">
+                      <div class="one-legend-dot"></div>
+                      <div class="one-legend-text"><strong>Atenção</strong> — Frequência em risco. Merece acompanhamento.</div>
+                    </div>
+                    <div class="one-legend-item one-legend-green">
+                      <div class="one-legend-dot"></div>
+                      <div class="one-legend-text"><strong>Regular</strong> — Frequência satisfatória. Continuar monitorando.</div>
+                    </div>
+                  </div>
+                  <div class="one-legend-cols">
+                    <div class="one-legend-col-item">
+                      <span class="one-legend-col-icon"><i class="bi bi-x-circle-fill text-danger"></i></span>
+                      <div><strong>Faltas Totais</strong> — Total de faltas registradas. Quanto maior, pior.</div>
+                    </div>
+                    <div class="one-legend-col-item">
+                      <span class="one-legend-col-icon"><i class="bi bi-repeat" style="color:#d97706;"></i></span>
+                      <div><strong>Faltas Seguidas</strong> — Maior sequência de faltas consecutivas.</div>
+                    </div>
+                    <div class="one-legend-col-item">
+                      <span class="one-legend-col-icon"><i class="bi bi-clock-history" style="color:#7c3aed;"></i></span>
+                      <div><strong>Desde Última Presença</strong> — Aulas registradas desde a última vez que compareceu. Alto indica possível abandono.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tabela -->
+              <div class="one-ranking-table-wrap" style="border: none; border-radius: 0; box-shadow: none;">
+                <div id="dashRankingLoading" class="one-dash-loading d-none" style="padding: 24px;">
+                  <i class="bi bi-arrow-repeat spin"></i> Calculando ranking...
+                </div>
+                <table class="one-ranking-table" id="dashRankingTable">
+                  <thead>
+                    <tr>
+                      <th class="col-pos">#</th>
+                      <th class="col-name">Aluno</th>
+                      <th class="col-total" title="Total de faltas registradas">
+                        <i class="bi bi-x-circle-fill"></i> Faltas Totais
+                      </th>
+                      <th class="col-consec" title="Maior sequência de faltas consecutivas">
+                        <i class="bi bi-repeat"></i> Faltas Seguidas
+                      </th>
+                      <th class="col-since" title="Aulas registradas desde a última presença">
+                        <i class="bi bi-clock-history"></i> Desde Última Presença
+                      </th>
+                      <th class="col-status">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashRankingTableBody">
+                    <tr>
+                      <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-hourglass-split d-block mb-2" style="font-size:1.5rem; opacity:0.4;"></i>
+                        Carregue o Dashboard para ver o ranking.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div id="dashRankingEmpty" class="one-ranking-empty d-none">
+                  <i class="bi bi-clipboard-x"></i>
+                  <p>Nenhum dado de chamada disponível ainda.</p>
+                </div>
+              </div>
+
+            </div><!-- /ranking card -->
+
           </div>
         </main>
       </div><!-- /viewDashboard -->
@@ -815,6 +907,9 @@
               <button class="one-tab-btn" data-tab="dashboard">
                 <i class="bi bi-bar-chart-line-fill"></i> Dashboard
               </button>
+              <button class="one-tab-btn" data-tab="ranking">
+                <i class="bi bi-trophy-fill"></i> Ranking
+              </button>
             </div>
           </div>
         </div>
@@ -994,6 +1089,111 @@
 
           </div>
         </div><!-- /TAB: DASHBOARD -->
+
+        <!-- TAB: RANKING -->
+        <div class="one-tab-pane d-none" data-tab="ranking">
+          <div class="container" style="padding-top: 24px; padding-bottom: 40px;">
+
+            <!-- Header do Ranking -->
+            <div class="one-ranking-header">
+              <div class="one-ranking-header-left">
+                <div class="one-ranking-icon-wrap">
+                  <i class="bi bi-trophy-fill"></i>
+                </div>
+                <div>
+                  <h2 class="one-ranking-title">Ranking de Frequência</h2>
+                  <p class="one-ranking-subtitle">Alunos com maior atenção aparecem primeiro</p>
+                </div>
+              </div>
+              <div class="one-ranking-filter-wrap">
+                <label class="one-control-label"><i class="bi bi-funnel-fill"></i> Turma</label>
+                <div class="one-dash-pills" id="oneRankingTurmaFilter">
+                  <button class="one-dash-pill active" data-turma="total">Total</button>
+                  <button class="one-dash-pill" data-turma="Turma 1">1ª Turma</button>
+                  <button class="one-dash-pill" data-turma="Turma 2">2ª Turma</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legenda -->
+            <div class="one-ranking-legend">
+              <div class="one-legend-title"><i class="bi bi-info-circle-fill"></i> Como interpretar o ranking</div>
+              <div class="one-legend-items">
+                <div class="one-legend-item one-legend-red">
+                  <div class="one-legend-dot"></div>
+                  <div class="one-legend-text">
+                    <strong>Crítico</strong> — Aluno com situação de frequência grave. Necessita atenção urgente.
+                  </div>
+                </div>
+                <div class="one-legend-item one-legend-yellow">
+                  <div class="one-legend-dot"></div>
+                  <div class="one-legend-text">
+                    <strong>Atenção</strong> — Aluno com frequência em risco. Merece acompanhamento.
+                  </div>
+                </div>
+                <div class="one-legend-item one-legend-green">
+                  <div class="one-legend-dot"></div>
+                  <div class="one-legend-text">
+                    <strong>Regular</strong> — Aluno com frequência satisfatória. Continuar monitorando.
+                  </div>
+                </div>
+              </div>
+              <div class="one-legend-cols">
+                <div class="one-legend-col-item">
+                  <span class="one-legend-col-icon"><i class="bi bi-x-circle-fill text-danger"></i></span>
+                  <div><strong>Faltas Totais</strong> — Total de faltas registradas no curso. Quanto maior, pior.</div>
+                </div>
+                <div class="one-legend-col-item">
+                  <span class="one-legend-col-icon"><i class="bi bi-repeat" style="color: #d97706;"></i></span>
+                  <div><strong>Faltas Seguidas</strong> — Maior sequência de faltas consecutivas. Indica padrão de ausência.</div>
+                </div>
+                <div class="one-legend-col-item">
+                  <span class="one-legend-col-icon"><i class="bi bi-clock-history" style="color: #7c3aed;"></i></span>
+                  <div><strong>Desde a Última Presença</strong> — Aulas decorridas desde a última vez que compareceu. Alto indica possível abandono.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabela de Ranking -->
+            <div class="one-ranking-table-wrap">
+              <div id="oneRankingLoading" class="one-dash-loading d-none">
+                <i class="bi bi-arrow-repeat spin"></i> Calculando ranking...
+              </div>
+              <table class="one-ranking-table" id="oneRankingTable">
+                <thead>
+                  <tr>
+                    <th class="col-pos">#</th>
+                    <th class="col-name">Aluno</th>
+                    <th class="col-turma">Turma</th>
+                    <th class="col-total" title="Total de faltas registradas">
+                      <i class="bi bi-x-circle-fill"></i> Faltas Totais
+                    </th>
+                    <th class="col-consec" title="Maior sequência de faltas consecutivas">
+                      <i class="bi bi-repeat"></i> Faltas Seguidas
+                    </th>
+                    <th class="col-since" title="Aulas desde a última presença">
+                      <i class="bi bi-clock-history"></i> Desde Última Presença
+                    </th>
+                    <th class="col-status">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="oneRankingTableBody">
+                  <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                      <i class="bi bi-arrow-repeat spin fs-4 d-block mb-2"></i>
+                      Carregando dados...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div id="oneRankingEmpty" class="one-ranking-empty d-none">
+                <i class="bi bi-clipboard-x"></i>
+                <p>Nenhum dado de chamada disponível ainda.</p>
+              </div>
+            </div>
+
+          </div>
+        </div><!-- /TAB: RANKING -->
 
       </div><!-- /viewOneVoice -->
 

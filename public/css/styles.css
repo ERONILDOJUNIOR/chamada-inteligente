@@ -2475,3 +2475,431 @@ button {
     flex-wrap: wrap;
   }
 }
+
+/* ============================================
+   ONE VOICE — RANKING DE FREQUÊNCIA
+   ============================================ */
+
+/* Header do Ranking */
+.one-ranking-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.one-ranking-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.one-ranking-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.one-ranking-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.one-ranking-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+.one-ranking-filter-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* Legenda */
+.one-ranking-legend {
+  background: #fff;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.one-legend-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.one-legend-title i {
+  color: var(--accent-purple);
+}
+
+.one-legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.one-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.one-legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.one-legend-red {
+  background: rgba(239, 68, 68, 0.06);
+  border-left: 3px solid rgba(239, 68, 68, 0.6);
+}
+.one-legend-red .one-legend-dot { background: rgba(239, 68, 68, 0.7); }
+
+.one-legend-yellow {
+  background: rgba(245, 158, 11, 0.06);
+  border-left: 3px solid rgba(245, 158, 11, 0.6);
+}
+.one-legend-yellow .one-legend-dot { background: rgba(245, 158, 11, 0.7); }
+
+.one-legend-green {
+  background: rgba(34, 197, 94, 0.06);
+  border-left: 3px solid rgba(34, 197, 94, 0.6);
+}
+.one-legend-green .one-legend-dot { background: rgba(34, 197, 94, 0.7); }
+
+.one-legend-text {
+  line-height: 1.4;
+}
+
+.one-legend-cols {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 12px;
+}
+
+.one-legend-col-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.one-legend-col-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  margin-top: 1px;
+}
+
+/* Tabela de Ranking */
+.one-ranking-table-wrap {
+  background: #fff;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+.one-ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.one-ranking-table thead tr {
+  background: linear-gradient(135deg, #062B52 0%, #0E5C97 100%);
+}
+
+.one-ranking-table thead th {
+  color: rgba(255,255,255,0.9);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.76rem;
+  padding: 12px 14px;
+  text-align: left;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.one-ranking-table thead th i {
+  margin-right: 4px;
+  opacity: 0.85;
+}
+
+.one-ranking-table thead th.col-pos {
+  text-align: center;
+  width: 44px;
+}
+
+.one-ranking-table thead th.col-total,
+.one-ranking-table thead th.col-consec,
+.one-ranking-table thead th.col-since {
+  text-align: center;
+}
+
+.one-ranking-table thead th.col-status {
+  text-align: center;
+  width: 100px;
+}
+
+/* Linhas do corpo da tabela */
+.one-ranking-table tbody tr {
+  border-bottom: 1px solid var(--glass-border);
+  transition: filter 0.15s ease;
+}
+
+.one-ranking-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.one-ranking-table tbody tr:hover {
+  filter: brightness(0.97);
+}
+
+/* Cores suaves por status */
+.one-ranking-table tbody tr.rank-red {
+  background: rgba(239, 68, 68, 0.06);
+  border-left: 4px solid rgba(239, 68, 68, 0.55);
+}
+
+.one-ranking-table tbody tr.rank-yellow {
+  background: rgba(245, 158, 11, 0.06);
+  border-left: 4px solid rgba(245, 158, 11, 0.55);
+}
+
+.one-ranking-table tbody tr.rank-green {
+  background: rgba(34, 197, 94, 0.04);
+  border-left: 4px solid rgba(34, 197, 94, 0.45);
+}
+
+/* Células */
+.one-ranking-table tbody td {
+  padding: 11px 14px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+/* Posição */
+.one-ranking-table td.col-pos {
+  text-align: center;
+}
+
+.one-rank-pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.75rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+tr.rank-red .one-rank-pos {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+tr.rank-yellow .one-rank-pos {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
+tr.rank-green .one-rank-pos {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+/* Nome do aluno */
+.one-rank-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+/* Turma badge */
+.one-rank-turma {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.one-rank-turma.t1 {
+  background: rgba(30, 136, 217, 0.12);
+  color: #1565c0;
+}
+
+.one-rank-turma.t2 {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
+/* Métricas numéricas */
+.one-ranking-table td.col-total,
+.one-ranking-table td.col-consec,
+.one-ranking-table td.col-since {
+  text-align: center;
+}
+
+.one-rank-metric {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.one-rank-metric.metric-total {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.09);
+}
+
+.one-rank-metric.metric-zero {
+  color: var(--text-muted);
+  background: rgba(0,0,0,0.04);
+  font-weight: 500;
+}
+
+.one-rank-metric.metric-consec {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.09);
+}
+
+.one-rank-metric.metric-since {
+  color: #6d28d9;
+  background: rgba(124, 58, 237, 0.09);
+}
+
+/* Badge de status */
+.one-ranking-table td.col-status {
+  text-align: center;
+}
+
+.one-rank-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.one-rank-status.status-red {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.one-rank-status.status-yellow {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.one-rank-status.status-green {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* Estado vazio */
+.one-ranking-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  text-align: center;
+  gap: 10px;
+}
+
+.one-ranking-empty i {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.one-ranking-empty p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .one-ranking-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .one-ranking-filter-wrap {
+    align-items: flex-start;
+  }
+
+  .one-ranking-table thead th.col-turma {
+    display: none;
+  }
+
+  .one-ranking-table tbody td.col-turma {
+    display: none;
+  }
+
+  .one-ranking-table {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .one-ranking-table thead th.col-since {
+    display: none;
+  }
+  .one-ranking-table tbody td.col-since {
+    display: none;
+  }
+}

@@ -1200,6 +1200,7 @@
         financeiroSheets.length > 0
           ? renderChartFinanceiroForSheet(financeiroSheets[0])
           : Promise.resolve(),
+        renderDashRanking(OFICIAL),
       ]);
 
       if (financeiroSheets.length > 0) {
@@ -1290,6 +1291,139 @@
       UI.renderChartFinanceiro(labels, dataPercent);
     } catch (err) {
       console.error('Erro ao renderizar gráfico financeiro', err);
+    }
+  }
+
+  // ============================================
+  // Ranking de Frequência — Dashboard Prepara
+  // ============================================
+
+  /**
+   * Calcula métricas de frequência de um aluno.
+   * Ignora células vazias — considera APENAS datas com P ou F registrado.
+   */
+  function calcStudentMetricsDash(attendance, dates) {
+    const markedDates = dates.filter(d => {
+      const v = (attendance[d] || '').toUpperCase();
+      return v === 'P' || v === 'F';
+    });
+
+    let totalFaltas = 0;
+    let maxConsecutivas = 0;
+    let currentConsec = 0;
+    let lastPresencaIdx = -1;
+
+    for (let i = 0; i < markedDates.length; i++) {
+      const val = (attendance[markedDates[i]] || '').toUpperCase();
+      if (val === 'F') {
+        totalFaltas++;
+        currentConsec++;
+        if (currentConsec > maxConsecutivas) maxConsecutivas = currentConsec;
+      } else if (val === 'P') {
+        currentConsec = 0;
+        lastPresencaIdx = i;
+      }
+    }
+
+    const desdeUltimaPresenca = lastPresencaIdx === -1
+      ? markedDates.length
+      : markedDates.length - 1 - lastPresencaIdx;
+
+    return { totalFaltas, maxConsecutivas, desdeUltimaPresenca, totalAulasRegistradas: markedDates.length };
+  }
+
+  /**
+   * Classifica o status do aluno:
+   * 🔴 Crítico  — ≥ 3 em qualquer critério
+   * 🟡 Atenção  — ≥ 2 em qualquer critério
+   * 🟢 Regular  — demais
+   */
+  function calcStatusDash({ totalFaltas, maxConsecutivas, desdeUltimaPresenca }) {
+    if (totalFaltas >= 3 || maxConsecutivas >= 3 || desdeUltimaPresenca >= 3) return 'red';
+    if (totalFaltas >= 2 || maxConsecutivas >= 2 || desdeUltimaPresenca >= 2) return 'yellow';
+    return 'green';
+  }
+
+  /**
+   * Ordena: 1º totalFaltas, 2º maxConsecutivas, 3º desdeUltimaPresenca (tudo desc)
+   */
+  function sortRankingDash(students) {
+    return students.slice().sort((a, b) => {
+      if (b.totalFaltas !== a.totalFaltas) return b.totalFaltas - a.totalFaltas;
+      if (b.maxConsecutivas !== a.maxConsecutivas) return b.maxConsecutivas - a.maxConsecutivas;
+      return b.desdeUltimaPresenca - a.desdeUltimaPresenca;
+    });
+  }
+
+  /**
+   * Busca os dados da CHAMADA OFICIAL, calcula as métricas e renderiza a tabela.
+   */
+  async function renderDashRanking(sheetName) {
+    const loadingEl = document.getElementById('dashRankingLoading');
+    const tableEl   = document.getElementById('dashRankingTable');
+    const tbody     = document.getElementById('dashRankingTableBody');
+    const emptyEl   = document.getElementById('dashRankingEmpty');
+
+    if (!tbody) return;
+
+    if (loadingEl) loadingEl.classList.remove('d-none');
+    if (tableEl)   tableEl.style.display = 'none';
+
+    try {
+      const data = await API.fetchAttendance(sheetName);
+      if (!data.success || !data.students || data.students.length === 0) {
+        if (tableEl)   tableEl.style.display = 'none';
+        if (emptyEl)   emptyEl.classList.remove('d-none');
+        return;
+      }
+
+      const dates = data.headers || [];
+
+      let ranked = data.students.map(student => {
+        const metrics = calcStudentMetricsDash(student.attendance || {}, dates);
+        return {
+          name:   student.name,
+          ...metrics,
+          status: calcStatusDash(metrics),
+        };
+      });
+
+      ranked = sortRankingDash(ranked);
+
+      // Renderiza linhas
+      const statusLabel = { red: '🔴 Crítico', yellow: '🟡 Atenção', green: '🟢 Regular' };
+      const statusClass = { red: 'status-red', yellow: 'status-yellow', green: 'status-green' };
+      const rowClass    = { red: 'rank-red', yellow: 'rank-yellow', green: 'rank-green' };
+
+      tbody.innerHTML = ranked.map((s, idx) => {
+        const totalCls  = s.totalFaltas > 0  ? 'metric-total'  : 'metric-zero';
+        const consecCls = s.maxConsecutivas > 0 ? 'metric-consec' : 'metric-zero';
+        const sinceCls  = s.desdeUltimaPresenca > 0 ? 'metric-since' : 'metric-zero';
+
+        const sinceLabel = s.desdeUltimaPresenca === 0
+          ? '0'
+          : s.desdeUltimaPresenca === s.totalAulasRegistradas && s.totalAulasRegistradas > 0
+            ? `${s.desdeUltimaPresenca} ⚠️`
+            : `${s.desdeUltimaPresenca}`;
+
+        return `
+          <tr class="${rowClass[s.status]}">
+            <td class="col-pos"><span class="one-rank-pos">${idx + 1}</span></td>
+            <td class="col-name"><span class="one-rank-name">${s.name}</span></td>
+            <td class="col-total"><span class="one-rank-metric ${totalCls}">${s.totalFaltas}</span></td>
+            <td class="col-consec"><span class="one-rank-metric ${consecCls}">${s.maxConsecutivas}</span></td>
+            <td class="col-since"><span class="one-rank-metric ${sinceCls}">${sinceLabel}</span></td>
+            <td class="col-status"><span class="one-rank-status ${statusClass[s.status]}">${statusLabel[s.status]}</span></td>
+          </tr>`;
+      }).join('');
+
+      if (emptyEl) emptyEl.classList.add('d-none');
+      if (tableEl) tableEl.style.display = '';
+
+    } catch (err) {
+      console.error('[Dash Ranking] Erro:', err);
+    } finally {
+      if (loadingEl) loadingEl.classList.add('d-none');
     }
   }
 

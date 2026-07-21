@@ -180,6 +180,11 @@ const OneVoice = (() => {
     if (tab === 'alunos') {
       loadAlunos();
     }
+    // Ao entrar no Ranking, carrega/atualiza os dados
+    if (tab === 'ranking') {
+      // loadRanking é definida mais abaixo no closure — usamos setTimeout para garantir que está declarada
+      setTimeout(() => { if (typeof loadRanking === 'function') loadRanking(_rankingCurrentFilter || 'total'); }, 0);
+    }
   }
 
   // --------------------------------------------------
@@ -797,6 +802,256 @@ const OneVoice = (() => {
     } else {
       bindDashboardEvents();
     }
+  })();
+
+  // --------------------------------------------------
+  // RANKING DE FREQUÊNCIA
+  // --------------------------------------------------
+
+  // Cache dos dados para o ranking (compartilha com o dashboard se possível)
+  let _rankingCache = { t1: null, t2: null };
+  let _rankingCurrentFilter = 'total';
+
+  /**
+   * Calcula as 3 métricas de um aluno a partir do seu attendance e do array de datas ordenado.
+   *
+   * @param {object} attendance  - { "13/07": "P", "20/07": "F", ... }
+   * @param {string[]} dates     - array de datas em ordem cronológica
+   * @returns {{ totalFaltas, maxConsecutivas, desdeUltimaPresenca }}
+   */
+  function calcStudentMetrics(attendance, dates) {
+    // ⚠️ Filtra APENAS as datas que têm P ou F registrado.
+    // Células vazias = aula futura ou ainda não registrada → ignoradas completamente.
+    const markedDates = dates.filter(d => {
+      const val = (attendance[d] || '').toUpperCase();
+      return val === 'P' || val === 'F';
+    });
+
+    let totalFaltas = 0;
+    let maxConsecutivas = 0;
+    let currentConsec = 0;
+    let lastPresencaIdx = -1; // índice (dentro de markedDates) da última presença
+
+    for (let i = 0; i < markedDates.length; i++) {
+      const val = (attendance[markedDates[i]] || '').toUpperCase();
+      if (val === 'F') {
+        totalFaltas++;
+        currentConsec++;
+        if (currentConsec > maxConsecutivas) maxConsecutivas = currentConsec;
+      } else if (val === 'P') {
+        currentConsec = 0;
+        lastPresencaIdx = i;
+      }
+    }
+
+    // Aulas MARCADAS desde a última presença (não conta vazias)
+    const desdeUltimaPresenca = lastPresencaIdx === -1
+      ? markedDates.length  // nunca compareceu em nenhuma aula registrada
+      : markedDates.length - 1 - lastPresencaIdx;
+
+    return { totalFaltas, maxConsecutivas, desdeUltimaPresenca, totalAulasRegistradas: markedDates.length };
+  }
+
+  /**
+   * Determina o status (cor) do aluno com base nas métricas.
+   * Critérios:
+   *   🔴 Crítico  — totalFaltas &gt;= 3 OU maxConsecutivas &gt;= 3 OU desdeUltimaPresenca &gt;= 3
+   *   🟡 Atenção  — totalFaltas &gt;= 2 OU maxConsecutivas &gt;= 2 OU desdeUltimaPresenca &gt;= 2
+   *   🟢 Regular  — demais casos
+   */
+  function calcStatus(metrics) {
+    const { totalFaltas, maxConsecutivas, desdeUltimaPresenca } = metrics;
+    if (totalFaltas >= 3 || maxConsecutivas >= 3 || desdeUltimaPresenca >= 3) return 'red';
+    if (totalFaltas >= 2 || maxConsecutivas >= 2 || desdeUltimaPresenca >= 2) return 'yellow';
+    return 'green';
+  }
+
+  /**
+   * Ordena os alunos pelo critério combinado:
+   * 1º totalFaltas (desc), 2º maxConsecutivas (desc), 3º desdeUltimaPresenca (desc)
+   */
+  function sortRanking(students) {
+    return students.slice().sort((a, b) => {
+      if (b.totalFaltas !== a.totalFaltas) return b.totalFaltas - a.totalFaltas;
+      if (b.maxConsecutivas !== a.maxConsecutivas) return b.maxConsecutivas - a.maxConsecutivas;
+      return b.desdeUltimaPresenca - a.desdeUltimaPresenca;
+    });
+  }
+
+  /**
+   * Ponto de entrada da aba Ranking.
+   * filter: 'total' | 'Turma 1' | 'Turma 2'
+   */
+  async function loadRanking(filter) {
+    _rankingCurrentFilter = filter;
+
+    // Atualiza pills de seleção
+    document.querySelectorAll('#oneRankingTurmaFilter .one-dash-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.turma === filter);
+    });
+
+    const loadingEl = document.getElementById('oneRankingLoading');
+    const tableEl = document.getElementById('oneRankingTable');
+    const emptyEl = document.getElementById('oneRankingEmpty');
+
+    if (loadingEl) loadingEl.classList.remove('d-none');
+    if (tableEl) tableEl.style.display = 'none';
+    if (emptyEl) emptyEl.classList.add('d-none');
+
+    try {
+      // Busca dados com cache
+      if (!_rankingCache.t1) {
+        const d1 = await API.fetchOneAttendance('Turma 1');
+        _rankingCache.t1 = d1.success ? d1 : { dates: [], students: [] };
+      }
+      if (!_rankingCache.t2) {
+        const d2 = await API.fetchOneAttendance('Turma 2');
+        _rankingCache.t2 = d2.success ? d2 : { dates: [], students: [] };
+      }
+
+      // Monta lista de alunos com métricas
+      let rankedStudents = [];
+
+      const processaTurma = (turmaData, turmaNome) => {
+        const dates = turmaData.dates || [];
+        (turmaData.students || []).forEach(student => {
+          const metrics = calcStudentMetrics(student.attendance || {}, dates);
+          const status = calcStatus(metrics);
+          rankedStudents.push({
+            name: student.name,
+            turma: turmaNome,
+            // totalAulasRegistradas vem dentro de metrics
+            ...metrics,
+            status,
+          });
+        });
+      };
+
+      if (filter === 'total' || filter === 'Turma 1') {
+        processaTurma(_rankingCache.t1, 'Turma 1');
+      }
+      if (filter === 'total' || filter === 'Turma 2') {
+        processaTurma(_rankingCache.t2, 'Turma 2');
+      }
+
+      rankedStudents = sortRanking(rankedStudents);
+
+      renderRankingTable(rankedStudents);
+
+    } catch (err) {
+      console.error('[ONE Ranking] Erro:', err);
+    } finally {
+      if (loadingEl) loadingEl.classList.add('d-none');
+      if (tableEl) tableEl.style.display = '';
+    }
+  }
+
+  /**
+   * Renderiza as linhas da tabela de ranking.
+   */
+  function renderRankingTable(students) {
+    const tbody = document.getElementById('oneRankingTableBody');
+    const emptyEl = document.getElementById('oneRankingEmpty');
+    const tableEl = document.getElementById('oneRankingTable');
+
+    if (!tbody) return;
+
+    if (students.length === 0) {
+      tbody.innerHTML = '';
+      if (tableEl) tableEl.style.display = 'none';
+      if (emptyEl) emptyEl.classList.remove('d-none');
+      return;
+    }
+
+    if (emptyEl) emptyEl.classList.add('d-none');
+    if (tableEl) tableEl.style.display = '';
+
+    const statusLabel = {
+      red: '🔴 Crítico',
+      yellow: '🟡 Atenção',
+      green: '🟢 Regular',
+    };
+
+    const statusClass = {
+      red: 'status-red',
+      yellow: 'status-yellow',
+      green: 'status-green',
+    };
+
+    const rowClass = {
+      red: 'rank-red',
+      yellow: 'rank-yellow',
+      green: 'rank-green',
+    };
+
+    tbody.innerHTML = students.map((s, idx) => {
+      const metricTotalClass = s.totalFaltas > 0 ? 'metric-total' : 'metric-zero';
+      const metricConsecClass = s.maxConsecutivas > 0 ? 'metric-consec' : 'metric-zero';
+      const metricSinceClass = s.desdeUltimaPresenca > 0 ? 'metric-since' : 'metric-zero';
+
+      const sinceLabel = s.desdeUltimaPresenca === 0
+        ? '0'
+        : s.desdeUltimaPresenca === s.totalAulasRegistradas && s.totalAulasRegistradas > 0
+          ? `${s.desdeUltimaPresenca} ⚠️`
+          : `${s.desdeUltimaPresenca}`;
+
+      const turmaClass = s.turma === 'Turma 1' ? 't1' : 't2';
+      const turmaLabel = s.turma === 'Turma 1' ? '1ª Turma' : '2ª Turma';
+
+      return `
+        <tr class="${rowClass[s.status]}">
+          <td class="col-pos"><span class="one-rank-pos">${idx + 1}</span></td>
+          <td class="col-name"><span class="one-rank-name">${s.name}</span></td>
+          <td class="col-turma"><span class="one-rank-turma ${turmaClass}">${turmaLabel}</span></td>
+          <td class="col-total">
+            <span class="one-rank-metric ${metricTotalClass}">${s.totalFaltas}</span>
+          </td>
+          <td class="col-consec">
+            <span class="one-rank-metric ${metricConsecClass}">${s.maxConsecutivas}</span>
+          </td>
+          <td class="col-since">
+            <span class="one-rank-metric ${metricSinceClass}">${sinceLabel}</span>
+          </td>
+          <td class="col-status">
+            <span class="one-rank-status ${statusClass[s.status]}">${statusLabel[s.status]}</span>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  /** Bind pills do filtro de turma no ranking */
+  function bindRankingEvents() {
+    document.querySelectorAll('#oneRankingTurmaFilter .one-dash-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        _rankingCache = { t1: null, t2: null }; // força reload
+        loadRanking(pill.dataset.turma);
+      });
+    });
+  }
+
+  // Registra eventos do ranking assim que o DOM estiver pronto
+  (function initRankingEvents() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindRankingEvents);
+    } else {
+      bindRankingEvents();
+    }
+  })();
+
+  // Patch no switchTab para carregar o ranking ao entrar na aba
+  const _origSwitchTab = switchTab;
+  // eslint-disable-next-line no-global-assign
+  (function patchSwitchTab() {
+    // sobrescreve a referência local capturada no closure
+    const _originalSwitchTab = switchTab;
+    document.querySelectorAll('.one-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.tab === 'ranking') {
+          // pequeno delay para garantir que o pane ficou visível
+          setTimeout(() => loadRanking(_rankingCurrentFilter), 50);
+        }
+      });
+    });
   })();
 
   // --------------------------------------------------
