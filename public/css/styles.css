@@ -1542,6 +1542,49 @@ button {
   box-shadow: 0 4px 15px var(--one-orange-glow);
 }
 
+/* ---- Sidebar: Submenu ONE ---- */
+.one-sidebar-submenu {
+  display: none;
+  flex-direction: column;
+  padding-left: 20px;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+#navOneVoice.active + .one-sidebar-submenu {
+  display: flex !important;
+}
+
+.one-sidebar-submenu .nav-item-sub {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.one-sidebar-submenu .nav-item-sub i {
+  font-size: 1rem;
+}
+
+.one-sidebar-submenu .nav-item-sub:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.one-sidebar-submenu .nav-item-sub.active {
+  color: var(--one-orange);
+  background: rgba(255, 107, 0, 0.05);
+  font-weight: 600;
+}
+
 /* ---- ONE Header ---- */
 .one-header {
   background: var(--one-gradient);

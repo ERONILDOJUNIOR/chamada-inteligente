@@ -84,6 +84,20 @@
         <div class="sidebar-divider"></div>
         <button id="navOneVoice" class="nav-item nav-item-one"><i class="bi bi-music-note-beamed"></i> ONE
           Voice</button>
+        <div id="oneSubmenu" class="one-sidebar-submenu">
+          <button class="nav-item nav-item-sub one-tab-btn active" data-tab="chamada">
+            <i class="bi bi-clipboard-check-fill"></i> Chamada
+          </button>
+          <button class="nav-item nav-item-sub one-tab-btn" data-tab="alunos">
+            <i class="bi bi-people-fill"></i> Alunos
+          </button>
+          <button class="nav-item nav-item-sub one-tab-btn" data-tab="dashboard">
+            <i class="bi bi-bar-chart-line-fill"></i> Dashboard
+          </button>
+          <button class="nav-item nav-item-sub one-tab-btn" data-tab="ranking">
+            <i class="bi bi-trophy-fill"></i> Ranking
+          </button>
+        </div>
       </nav>
       <div class="sidebar-footer">
         <button id="btnLogout" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
@@ -995,25 +1009,7 @@
           </div>
         </header>
 
-        <!-- Sub-tabs -->
-        <div class="one-tabs-bar">
-          <div class="container">
-            <div class="one-tabs">
-              <button class="one-tab-btn active" data-tab="chamada">
-                <i class="bi bi-clipboard-check-fill"></i> Chamada
-              </button>
-              <button class="one-tab-btn" data-tab="alunos">
-                <i class="bi bi-people-fill"></i> Alunos
-              </button>
-              <button class="one-tab-btn" data-tab="dashboard">
-                <i class="bi bi-bar-chart-line-fill"></i> Dashboard
-              </button>
-              <button class="one-tab-btn" data-tab="ranking">
-                <i class="bi bi-trophy-fill"></i> Ranking
-              </button>
-            </div>
-          </div>
-        </div>
+        <!-- Sub-tabs movidas para a sidebar -->
 
         <!-- TAB: CHAMADA -->
         <div class="one-tab-pane" data-tab="chamada">
