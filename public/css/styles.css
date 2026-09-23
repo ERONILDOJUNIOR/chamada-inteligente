@@ -19,9 +19,12 @@
   --accent-red: #ef4444;
   --accent-red-glow: rgba(239, 68, 68, 0.25);
   --accent-amber: #f59e0b;
+  --accent-justified: #2563eb;
+  --accent-justified-glow: rgba(37, 99, 235, 0.3);
   --gradient-header: linear-gradient(135deg, #062B52 0%, #0E5C97 50%, #1E88D9 100%);
   --gradient-present: linear-gradient(135deg, #22c55e, #16a34a);
   --gradient-absent: linear-gradient(135deg, #ef4444, #dc2626);
+  --gradient-justified: linear-gradient(135deg, #3b82f6, #1d4ed8);
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 18px;
@@ -326,6 +329,11 @@ button {
   box-shadow: inset 4px 0 12px -4px var(--accent-red-glow);
 }
 
+.student-card.status-justified {
+  border-left: 3px solid var(--accent-justified);
+  box-shadow: inset 4px 0 12px -4px var(--accent-justified-glow);
+}
+
 @keyframes cardSlideIn {
   to {
     opacity: 1;
@@ -388,13 +396,13 @@ button {
 
 .attendance-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .btn-attendance {
-  width: 52px;
-  height: 44px;
+  width: 48px;
+  height: 42px;
   border: 2px solid var(--glass-border);
   border-radius: var(--radius-md);
   background: transparent;
@@ -439,6 +447,15 @@ button {
   border-color: var(--accent-red);
   color: white;
   box-shadow: 0 0 16px var(--accent-red-glow);
+  transform: scale(1.05);
+}
+
+.btn-justified:hover,
+.btn-justified.active {
+  background: var(--gradient-justified);
+  border-color: var(--accent-justified);
+  color: white;
+  box-shadow: 0 0 16px var(--accent-justified-glow);
   transform: scale(1.05);
 }
 
@@ -545,6 +562,10 @@ button {
 
 .stat-value.stat-absent {
   color: var(--accent-red);
+}
+
+.stat-value.stat-justified {
+  color: var(--accent-justified);
 }
 
 .stat-value.stat-pending {
@@ -798,13 +819,13 @@ button {
   }
 
   .btn-attendance {
-    width: 48px;
-    height: 40px;
-    font-size: 0.9rem;
+    width: 40px;
+    height: 38px;
+    font-size: 0.85rem;
   }
 
   .attendance-buttons {
-    gap: 6px;
+    gap: 4px;
   }
 
   /* Summary bar compact for mobile */
@@ -1932,6 +1953,20 @@ button {
   border-color: transparent;
   color: #fff;
   box-shadow: 0 3px 10px var(--accent-red-glow);
+  transform: translateY(-2px);
+}
+
+.one-btn-fj {
+  border-color: var(--accent-justified);
+  color: var(--accent-justified);
+}
+
+.one-btn-fj:hover,
+.one-btn-fj.active {
+  background: var(--gradient-justified);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 3px 10px var(--accent-justified-glow);
   transform: translateY(-2px);
 }
 

@@ -421,11 +421,13 @@
         UI.showToast(`Data "${dateStr}" adicionada!`);
         // Recarrega os dados
         await loadAttendanceData(state.currentSheet);
-        // Seleciona a nova data (última)
-        const lastIdx = state.headers.length - 1;
-        UI.els.dateSelector.value = lastIdx.toString();
-        state.selectedDateIndex = lastIdx;
-        UI.renderStudents(state.students, lastIdx, state.headers[lastIdx]);
+        // Seleciona a data recém-adicionada se encontrada
+        const addedIdx = state.headers.indexOf(dateStr);
+        if (addedIdx !== -1) {
+          UI.els.dateSelector.value = addedIdx.toString();
+          state.selectedDateIndex = addedIdx;
+          UI.renderStudents(state.students, addedIdx, state.headers[addedIdx]);
+        }
       } catch (err) {
         UI.showToast('Erro ao adicionar data', 'error');
       } finally {
@@ -448,6 +450,11 @@
       const value = btn.dataset.value;
       const card = btn.closest('.student-card');
 
+      const studentIdx = parseInt(card.dataset.studentIndex, 10);
+      const dateKey = state.headers[state.selectedDateIndex];
+      const previousValue = (state.students[studentIdx].attendance[dateKey] || '').toUpperCase();
+      const newValue = previousValue === value ? '' : value;
+
       // Feedback visual imediato
       btn.classList.add('saving');
 
@@ -456,18 +463,21 @@
           sheetName: state.currentSheet,
           rowIndex: row,
           colIndex: col,
-          value: value,
+          value: newValue,
         });
 
         // Atualiza estado local
-        const studentIdx = parseInt(card.dataset.studentIndex, 10);
-        const dateKey = state.headers[state.selectedDateIndex];
-        state.students[studentIdx].attendance[dateKey] = value;
+        state.students[studentIdx].attendance[dateKey] = newValue;
 
         // Atualiza visual
-        UI.updateCardVisual(card, value);
+        UI.updateCardVisual(card, newValue);
         UI.updateSummary(state.students, dateKey);
-        UI.showToast(`${value === 'P' ? 'Presente' : 'Falta'} registrado!`);
+        if (newValue === '') {
+          UI.showToast('Presença desmarcada');
+        } else {
+          const label = newValue === 'P' ? 'Presente' : newValue === 'F' ? 'Falta' : 'Falta Justificada';
+          UI.showToast(`${label} registrada!`);
+        }
       } catch (err) {
         UI.showToast('Erro ao salvar. Tente novamente.', 'error');
       } finally {
@@ -931,13 +941,13 @@
         return;
       }
 
-      // Popula datas e auto-seleciona a última
-      UI.populateDates(data.headers);
+      // Popula datas na ordem cronológica correta e seleciona a mais próxima de hoje
+      const selectedIdx = UI.populateDates(data.headers);
+      const activeIdx = selectedIdx !== -1 ? selectedIdx : Math.max(0, data.headers.length - 1);
 
-      // Auto-render com a última data
-      const lastIdx = data.headers.length - 1;
-      state.selectedDateIndex = lastIdx;
-      UI.renderStudents(state.students, lastIdx, data.headers[lastIdx]);
+      // Renderiza alunos com a data selecionada
+      state.selectedDateIndex = activeIdx;
+      UI.renderStudents(state.students, activeIdx, data.headers[activeIdx]);
 
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
@@ -1220,19 +1230,33 @@
       const data = await API.fetchAttendance(sheetName);
       if (!data.success) return;
 
-      const labels = data.headers; // As datas
+      const rawLabels = data.headers; // As datas da planilha
+      // Ordena cronologicamente para exibição no gráfico
+      const sortedDates = rawLabels.map(d => ({
+        dateStr: d,
+        dateObj: UI.parseDateString(d),
+      })).sort((a, b) => {
+        if (a.dateObj && b.dateObj) return a.dateObj.getTime() - b.dateObj.getTime();
+        if (a.dateObj) return -1;
+        if (b.dateObj) return 1;
+        return 0;
+      });
+
+      const labels = sortedDates.map(item => item.dateStr);
       const presentData = new Array(labels.length).fill(0);
       const absentData = new Array(labels.length).fill(0);
+      const justifiedData = new Array(labels.length).fill(0);
 
       data.students.forEach(student => {
         labels.forEach((dateKey, index) => {
           const val = student.attendance[dateKey];
           if (val === 'P') presentData[index]++;
           if (val === 'F') absentData[index]++;
+          if (val === 'FJ') justifiedData[index]++;
         });
       });
 
-      UI.renderChartDiario(labels, presentData, absentData);
+      UI.renderChartDiario(labels, presentData, absentData, justifiedData);
     } catch (err) {
       console.error('Erro ao renderizar gráfico diário', err);
     }
@@ -1350,10 +1374,11 @@
   function calcStudentMetricsDash(attendance, dates) {
     const markedDates = dates.filter(d => {
       const v = (attendance[d] || '').toUpperCase();
-      return v === 'P' || v === 'F';
+      return v === 'P' || v === 'F' || v === 'FJ';
     });
 
     let totalFaltas = 0;
+    let totalJustificadas = 0;
     let maxConsecutivas = 0;
     let currentConsec = 0;
     let lastPresencaIdx = -1;
@@ -1364,6 +1389,9 @@
         totalFaltas++;
         currentConsec++;
         if (currentConsec > maxConsecutivas) maxConsecutivas = currentConsec;
+      } else if (val === 'FJ') {
+        totalJustificadas++;
+        currentConsec = 0;
       } else if (val === 'P') {
         currentConsec = 0;
         lastPresencaIdx = i;
@@ -1374,7 +1402,7 @@
       ? markedDates.length
       : markedDates.length - 1 - lastPresencaIdx;
 
-    return { totalFaltas, maxConsecutivas, desdeUltimaPresenca, totalAulasRegistradas: markedDates.length };
+    return { totalFaltas, totalJustificadas, maxConsecutivas, desdeUltimaPresenca, totalAulasRegistradas: markedDates.length };
   }
 
   /**
@@ -1422,7 +1450,11 @@
         return;
       }
 
-      const dates = data.headers || [];
+      // Ordena as datas cronologicamente para que o cálculo de faltas consecutivas seja fidedigno
+      const rawDates = data.headers || [];
+      const sortedDateObjs = rawDates.map(d => ({ str: d, date: UI.parseDateString(d) }))
+        .sort((a, b) => (a.date && b.date ? a.date.getTime() - b.date.getTime() : 0));
+      const dates = sortedDateObjs.map(d => d.str);
 
       let ranked = data.students.map(student => {
         const metrics = calcStudentMetricsDash(student.attendance || {}, dates);

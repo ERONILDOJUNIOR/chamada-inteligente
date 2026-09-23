@@ -17,6 +17,7 @@ const UI = {
     summaryBar: document.getElementById('summaryBar'),
     totalPresent: document.getElementById('totalPresent'),
     totalAbsent: document.getElementById('totalAbsent'),
+    totalJustified: document.getElementById('totalJustified'),
     totalPending: document.getElementById('totalPending'),
     progressFill: document.getElementById('progressFill'),
     progressText: document.getElementById('progressText'),
@@ -167,27 +168,124 @@ const UI = {
     sheetSelector.disabled = false;
   },
 
+  PT_MONTHS: {
+    'jan': 0, 'fev': 1, 'mar': 2, 'abr': 3, 'mai': 4, 'jun': 5,
+    'jul': 6, 'ago': 7, 'set': 8, 'out': 9, 'nov': 10, 'dez': 11
+  },
+
   /**
-   * Popula o dropdown de datas
+   * Converte uma string de data (ex: "5-mar.", "16-abr.", "13/07") em objeto Date
+   * @param {string} str
+   * @returns {Date|null}
+   */
+  parseDateString(str) {
+    if (!str) return null;
+    const cleaned = str.trim().toLowerCase().replace(/\.$/, '');
+
+    // Formato com nome de mês em português: "5-mar", "16-abr", "24/set", etc.
+    const ptMatch = cleaned.match(/^(\d{1,2})[-/.\s]+([a-zçãõ]{3,})/i);
+    if (ptMatch) {
+      const day = parseInt(ptMatch[1], 10);
+      const mStr = ptMatch[2].substring(0, 3);
+      const month = this.PT_MONTHS[mStr];
+      if (month !== undefined) {
+        const year = new Date().getFullYear();
+        return new Date(year, month, day, 0, 0, 0);
+      }
+    }
+
+    // Formato numérico: "13/07", "13/07/2026", "13-07-2026"
+    const numMatch = cleaned.match(/^(\d{1,2})[-/.](\d{1,2})(?:[-/.](\d{2,4}))?$/);
+    if (numMatch) {
+      const day = parseInt(numMatch[1], 10);
+      const month = parseInt(numMatch[2], 10) - 1;
+      let year = new Date().getFullYear();
+      if (numMatch[3]) {
+        year = numMatch[3].length === 2 ? 2000 + parseInt(numMatch[3], 10) : parseInt(numMatch[3], 10);
+      }
+      return new Date(year, month, day, 0, 0, 0);
+    }
+
+    return null;
+  },
+
+  /**
+   * Encontra o índice da data mais próxima de hoje:
+   * 1. Se hoje for uma data de aula, seleciona ela.
+   * 2. Se a aula já passou (ex: ontem), seleciona a próxima data que vai ter chamada (>= hoje).
+   * 3. Se todas as datas já passaram, seleciona a mais recente no tempo (última da lista ordenada).
+   * @param {Array<{origIndex: number, dateStr: string, dateObj: Date|null}>} sortedItems
+   * @returns {number} origIndex
+   */
+  findClosestDateIndex(sortedItems) {
+    if (!sortedItems || sortedItems.length === 0) return -1;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
+
+    // 1. Procura a primeira aula futura ou de hoje (>= hoje)
+    const upcoming = sortedItems.find(item => item.dateObj && item.dateObj.getTime() >= todayTime);
+    if (upcoming) {
+      return upcoming.origIndex;
+    }
+
+    // 2. Se todas já passaram, pega a mais recente (última da lista cronológica com dateObj)
+    for (let i = sortedItems.length - 1; i >= 0; i--) {
+      if (sortedItems[i].dateObj) return sortedItems[i].origIndex;
+    }
+
+    return sortedItems[sortedItems.length - 1].origIndex;
+  },
+
+  /**
+   * Popula o dropdown de datas em ordem cronológica correta (sem alterar a planilha)
+   * e pré-seleciona automaticamente a data mais próxima da data de hoje.
    * @param {string[]} dates
+   * @returns {number} origIndex da data selecionada
    */
   populateDates(dates) {
     const { dateSelector, btnAddDate, searchInput } = this.els;
     dateSelector.innerHTML = '<option value="">Selecione a data...</option>';
-    dates.forEach((date, idx) => {
+
+    if (!dates || dates.length === 0) {
+      dateSelector.disabled = true;
+      return -1;
+    }
+
+    // Mapeia preservando o origIndex para apontar com precisão à coluna da planilha
+    const items = dates.map((date, origIndex) => ({
+      origIndex,
+      dateStr: date,
+      dateObj: this.parseDateString(date),
+    }));
+
+    // Ordena cronologicamente para exibição no dropdown
+    items.sort((a, b) => {
+      if (a.dateObj && b.dateObj) return a.dateObj.getTime() - b.dateObj.getTime();
+      if (a.dateObj) return -1;
+      if (b.dateObj) return 1;
+      return a.origIndex - b.origIndex;
+    });
+
+    // Popula o select na ordem correta, mantendo o value com o origIndex
+    items.forEach(item => {
       const opt = document.createElement('option');
-      opt.value = idx.toString();
-      opt.textContent = date;
+      opt.value = item.origIndex.toString();
+      opt.textContent = item.dateStr;
       dateSelector.appendChild(opt);
     });
+
     dateSelector.disabled = false;
     btnAddDate.disabled = false;
     searchInput.disabled = false;
 
-    // Auto-seleciona a última data (encontro mais recente)
-    if (dates.length > 0) {
-      dateSelector.value = (dates.length - 1).toString();
+    // Seleciona a data mais próxima de hoje (>= hoje, ou mais recente passada)
+    const bestIndex = this.findClosestDateIndex(items);
+    if (bestIndex !== -1) {
+      dateSelector.value = bestIndex.toString();
     }
+
+    return bestIndex;
   },
 
   /**
@@ -213,8 +311,8 @@ const UI = {
 
     students.forEach((student, i) => {
       const currentValue = student.attendance[dateKey] || '';
-      const statusClass = currentValue === 'P' ? 'status-present' : currentValue === 'F' ? 'status-absent' : '';
-      const statusText = currentValue === 'P' ? 'Presente ✓' : currentValue === 'F' ? 'Falta ✗' : 'Pendente';
+      const statusClass = currentValue === 'P' ? 'status-present' : currentValue === 'F' ? 'status-absent' : currentValue === 'FJ' ? 'status-justified' : '';
+      const statusText = currentValue === 'P' ? 'Presente ✓' : currentValue === 'F' ? 'Falta ✗' : currentValue === 'FJ' ? 'Falta Justificada ℹ' : 'Pendente';
 
       const card = document.createElement('div');
       card.className = `student-card ${statusClass}`;
@@ -235,10 +333,13 @@ const UI = {
           <div class="attendance-buttons">
             <button class="btn-attendance btn-present ${currentValue === 'P' ? 'active' : ''}"
                     data-row="${student.rowIndex}" data-col="${dateColIndex + 1}" data-value="P"
-                    aria-label="Presente">P</button>
+                    aria-label="Presente" title="Marcar Presente">P</button>
             <button class="btn-attendance btn-absent ${currentValue === 'F' ? 'active' : ''}"
                     data-row="${student.rowIndex}" data-col="${dateColIndex + 1}" data-value="F"
-                    aria-label="Falta">F</button>
+                    aria-label="Falta" title="Marcar Falta">F</button>
+            <button class="btn-attendance btn-justified ${currentValue === 'FJ' ? 'active' : ''}"
+                    data-row="${student.rowIndex}" data-col="${dateColIndex + 1}" data-value="FJ"
+                    aria-label="Falta Justificada" title="Marcar Falta Justificada">FJ</button>
           </div>
         </div>
       `;
@@ -254,36 +355,50 @@ const UI = {
    * Atualiza visualmente um card após salvar
    */
   updateCardVisual(card, value) {
-    card.classList.remove('status-present', 'status-absent');
-    card.classList.add(value === 'P' ? 'status-present' : 'status-absent');
+    card.classList.remove('status-present', 'status-absent', 'status-justified');
+    if (value === 'P') card.classList.add('status-present');
+    else if (value === 'F') card.classList.add('status-absent');
+    else if (value === 'FJ') card.classList.add('status-justified');
 
     const statusLabel = card.querySelector('[data-status-label]');
-    statusLabel.textContent = value === 'P' ? 'Presente ✓' : 'Falta ✗';
+    if (statusLabel) {
+      statusLabel.textContent = value === 'P'
+        ? 'Presente ✓'
+        : value === 'F'
+        ? 'Falta ✗'
+        : value === 'FJ'
+        ? 'Falta Justificada ℹ'
+        : 'Pendente';
+    }
 
     const btnP = card.querySelector('.btn-present');
     const btnF = card.querySelector('.btn-absent');
-    btnP.classList.toggle('active', value === 'P');
-    btnF.classList.toggle('active', value === 'F');
+    const btnFJ = card.querySelector('.btn-justified');
+    if (btnP) btnP.classList.toggle('active', value === 'P');
+    if (btnF) btnF.classList.toggle('active', value === 'F');
+    if (btnFJ) btnFJ.classList.toggle('active', value === 'FJ');
   },
 
   /**
    * Atualiza a barra de resumo
    */
   updateSummary(students, dateKey) {
-    let present = 0, absent = 0, pending = 0;
+    let present = 0, absent = 0, justified = 0, pending = 0;
     students.forEach(s => {
       const v = s.attendance[dateKey] || '';
       if (v === 'P') present++;
       else if (v === 'F') absent++;
+      else if (v === 'FJ') justified++;
       else pending++;
     });
 
     this.els.totalPresent.textContent = present;
     this.els.totalAbsent.textContent = absent;
+    if (this.els.totalJustified) this.els.totalJustified.textContent = justified;
     this.els.totalPending.textContent = pending;
 
     const total = students.length;
-    const filledPct = total > 0 ? Math.round(((present + absent) / total) * 100) : 0;
+    const filledPct = total > 0 ? Math.round(((present + absent + justified) / total) * 100) : 0;
     this.els.progressFill.style.width = `${filledPct}%`;
     this.els.progressText.textContent = `${filledPct}%`;
   },
@@ -370,8 +485,8 @@ const UI = {
     geralStudentList.innerHTML = '';
 
     students.forEach((student, i) => {
-      const att = student.attendance[subjectName] || { P: 0, F: 0 };
-      const totalAulas = att.P + att.F;
+      const att = student.attendance[subjectName] || { P: 0, F: 0, FJ: 0 };
+      const totalAulas = att.P + att.F + (att.FJ || 0);
       const pct = totalAulas > 0 ? Math.round((att.P / totalAulas) * 100) : 0;
 
       const card = document.createElement('div');
@@ -399,6 +514,10 @@ const UI = {
               <div style="text-align: center;">
                 <div style="font-size: 1.4rem; font-weight: 700; color: var(--error-color, #ef4444);">${att.F}</div>
                 <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Faltas</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-justified, #2563eb);">${att.FJ || 0}</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Justificadas</div>
               </div>
               <div style="text-align: center;">
                 <div style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">${pct}%</div>
@@ -494,7 +613,7 @@ const UI = {
     }
   },
 
-  renderChartDiario(labels, presentData, absentData) {
+  renderChartDiario(labels, presentData, absentData, justifiedData = []) {
     const ctx = this.els.chartDiarioCanvas.getContext('2d');
 
     if (this.charts.diario) {
@@ -509,13 +628,19 @@ const UI = {
           {
             label: 'Presenças',
             data: presentData,
-            backgroundColor: '#3b82f6', // blue
+            backgroundColor: '#22c55e', // green
             borderRadius: 4,
           },
           {
             label: 'Faltas',
             data: absentData,
             backgroundColor: '#ef4444', // red
+            borderRadius: 4,
+          },
+          {
+            label: 'Justificadas',
+            data: justifiedData,
+            backgroundColor: '#3b82f6', // blue
             borderRadius: 4,
           }
         ]

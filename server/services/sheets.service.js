@@ -368,7 +368,7 @@ async function getOficialGeralData() {
 
     const attendance = {};
     for (const subject of subjects) {
-      attendance[subject] = { P: 0, F: 0 };
+      attendance[subject] = { P: 0, F: 0, FJ: 0 };
     }
 
     for (let c = OFICIAL_CONFIG.DATA_START_COL; c < row.length; c++) {
@@ -377,6 +377,7 @@ async function getOficialGeralData() {
       const val = (row[c] || '').trim().toUpperCase();
       if (val === 'P') attendance[discipline].P++;
       if (val === 'F') attendance[discipline].F++;
+      if (val === 'FJ') attendance[discipline].FJ++;
     }
 
     students.push({

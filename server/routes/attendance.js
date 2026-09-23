@@ -54,18 +54,20 @@ router.post('/attendance', async (req, res) => {
     const { sheetName, rowIndex, colIndex, value } = req.body;
 
     // Validação básica
-    if (!sheetName || !rowIndex || colIndex === undefined || !value) {
+    if (!sheetName || !rowIndex || colIndex === undefined || value === undefined) {
       return res.status(400).json({
         success: false,
         error: 'Campos obrigatórios: sheetName, rowIndex, colIndex, value',
       });
     }
 
+    const valStr = (value || '').toString().trim().toUpperCase();
+
     const result = await sheetsService.updateAttendance(
       sheetName,
       Number(rowIndex),
       Number(colIndex),
-      value.toUpperCase()
+      valStr
     );
 
     res.json(result);

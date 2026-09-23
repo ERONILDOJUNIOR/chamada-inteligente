@@ -43,12 +43,12 @@ function formatDateDisplay(dateStr) {
 }
 
 /**
- * Valida se o valor é P ou F
+ * Valida se o valor é P, F ou FJ
  * @param {string} value - Valor a validar
  * @returns {boolean}
  */
 function isValidAttendanceValue(value) {
-  return value === 'P' || value === 'F';
+  return value === 'P' || value === 'F' || value === 'FJ';
 }
 
 /**

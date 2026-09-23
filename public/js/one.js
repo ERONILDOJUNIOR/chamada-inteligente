@@ -198,8 +198,23 @@ const OneVoice = (() => {
       if (data.success) {
         state.attendanceData = { dates: data.dates || [], students: data.students || [] };
 
-        // Aponta para a última data por padrão (a mais recente)
-        state.currentDateIndex = Math.max(0, state.attendanceData.dates.length - 1);
+        // Mapeia e ordena cronologicamente
+        const items = (data.dates || []).map((d, origIndex) => ({
+          origIndex,
+          dateStr: d,
+          dateObj: UI.parseDateString ? UI.parseDateString(d) : null,
+        }));
+
+        items.sort((a, b) => {
+          if (a.dateObj && b.dateObj) return a.dateObj.getTime() - b.dateObj.getTime();
+          if (a.dateObj) return -1;
+          if (b.dateObj) return 1;
+          return a.origIndex - b.origIndex;
+        });
+
+        // Encontra a data mais próxima de hoje (>= hoje ou mais recente)
+        const bestIdx = UI.findClosestDateIndex ? UI.findClosestDateIndex(items) : -1;
+        state.currentDateIndex = bestIdx !== -1 ? bestIdx : Math.max(0, state.attendanceData.dates.length - 1);
 
         renderDateSelector();
         renderStudentCards();
@@ -246,11 +261,25 @@ const OneVoice = (() => {
       return;
     }
 
-    dates.forEach((d, i) => {
+    // Mapeia e ordena cronologicamente para exibição
+    const items = dates.map((d, origIndex) => ({
+      origIndex,
+      dateStr: d,
+      dateObj: UI.parseDateString ? UI.parseDateString(d) : null,
+    }));
+
+    items.sort((a, b) => {
+      if (a.dateObj && b.dateObj) return a.dateObj.getTime() - b.dateObj.getTime();
+      if (a.dateObj) return -1;
+      if (b.dateObj) return 1;
+      return a.origIndex - b.origIndex;
+    });
+
+    items.forEach((item, pos) => {
       const opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = `Aula ${i + 1} — ${d}`;
-      if (i === state.currentDateIndex) opt.selected = true;
+      opt.value = item.origIndex;
+      opt.textContent = `Aula ${pos + 1} — ${item.dateStr}`;
+      if (item.origIndex === state.currentDateIndex) opt.selected = true;
       dateSelector.appendChild(opt);
     });
 
@@ -286,9 +315,10 @@ const OneVoice = (() => {
     }
 
     container.innerHTML = students.map((student, idx) => {
-      const presenca = student.attendance[currentDate] || '';
+      const presenca = (student.attendance[currentDate] || '').toUpperCase();
       const isP = presenca === 'P';
       const isF = presenca === 'F';
+      const isFJ = presenca === 'FJ';
 
       return `
         <div class="one-student-card" id="one-card-${idx}">
@@ -316,6 +346,13 @@ const OneVoice = (() => {
               data-value="F"
               title="Marcar Falta"
             >F</button>
+            <button
+              class="one-att-btn one-btn-fj ${isFJ ? 'active' : ''}"
+              data-idx="${idx}"
+              data-row="${student.rowIndex}"
+              data-value="FJ"
+              title="Marcar Falta Justificada"
+            >FJ</button>
           </div>
         </div>`;
     }).join('');
@@ -355,9 +392,11 @@ const OneVoice = (() => {
       if (newValue === '') {
         // Limpa a célula
         await API.saveOneAttendance({ turma: state.currentTurma, rowIndex, dateIndex: dateIdx, value: '' });
+        showToast(`Presença desmarcada — ${student.name}`, 'success');
       } else {
         await API.saveOneAttendance({ turma: state.currentTurma, rowIndex, dateIndex: dateIdx, value: newValue });
-        showToast(`${newValue === 'P' ? '✅ Presente' : '❌ Falta'} — ${student.name}`, 'success');
+        const label = newValue === 'P' ? '✅ Presente' : (newValue === 'FJ' ? '🔷 Falta Justificada' : '❌ Falta');
+        showToast(`${label} — ${student.name}`, 'success');
       }
     } catch (err) {
       // Reverte em caso de erro
@@ -600,7 +639,17 @@ const OneVoice = (() => {
       let count = 0;
       turmas.forEach(t => {
         (t.students || []).forEach(s => {
-          if ((s.attendance[date] || '') === 'F') count++;
+          if ((s.attendance[date] || '').toUpperCase() === 'F') count++;
+        });
+      });
+      return count;
+    });
+
+    const fjCounts = dates.map(date => {
+      let count = 0;
+      turmas.forEach(t => {
+        (t.students || []).forEach(s => {
+          if ((s.attendance[date] || '').toUpperCase() === 'FJ') count++;
         });
       });
       return count;
@@ -609,13 +658,14 @@ const OneVoice = (() => {
     const totalAlunos = turmas.reduce((sum, t) => sum + (t.students || []).length, 0);
     const totalP = pCounts.reduce((a, b) => a + b, 0);
     const totalF = fCounts.reduce((a, b) => a + b, 0);
+    const totalFJ = fjCounts.reduce((a, b) => a + b, 0);
 
-    return { dates, pCounts, fCounts, totalAlunos, totalP, totalF, label };
+    return { dates, pCounts, fCounts, fjCounts, totalAlunos, totalP, totalF, totalFJ, label };
   }
 
   /** Atualiza os 4 cards de resumo */
-  function renderSummaryCards({ totalAlunos, totalP, totalF }) {
-    const total = totalP + totalF;
+  function renderSummaryCards({ totalAlunos, totalP, totalF, totalFJ = 0 }) {
+    const total = totalP + totalF + totalFJ;
     const freq = total > 0 ? Math.round((totalP / total) * 100) : 0;
 
     const el = id => document.getElementById(id);
@@ -625,8 +675,8 @@ const OneVoice = (() => {
     if (el('oneDashFreq')) el('oneDashFreq').textContent = `${freq}%`;
   }
 
-  /** Gráfico de barras agrupadas: P e F por aula */
-  function renderBarChart({ dates, pCounts, fCounts, label }) {
+  /** Gráfico de barras agrupadas: P, F e FJ por aula */
+  function renderBarChart({ dates, pCounts, fCounts, fjCounts, label }) {
     const canvas = document.getElementById('oneDashBarChart');
     if (!canvas) return;
 
@@ -659,6 +709,15 @@ const OneVoice = (() => {
             data: fCounts,
             backgroundColor: 'rgba(239, 68, 68, 0.85)',
             borderColor: '#dc2626',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            borderSkipped: false,
+          },
+          {
+            label: 'Justificadas',
+            data: fjCounts,
+            backgroundColor: 'rgba(37, 99, 235, 0.85)',
+            borderColor: '#1d4ed8',
             borderWidth: 1.5,
             borderRadius: 6,
             borderSkipped: false,
@@ -713,7 +772,7 @@ const OneVoice = (() => {
   }
 
   /** Gráfico donut: frequência geral */
-  function renderDonutChart({ totalP, totalF, label }) {
+  function renderDonutChart({ totalP, totalF, totalFJ = 0, label }) {
     const canvas = document.getElementById('oneDashDonutChart');
     if (!canvas) return;
 
@@ -722,7 +781,7 @@ const OneVoice = (() => {
 
     if (_donutChart) { _donutChart.destroy(); _donutChart = null; }
 
-    const total = totalP + totalF;
+    const total = totalP + totalF + totalFJ;
     const freq = total > 0 ? Math.round((totalP / total) * 100) : 0;
 
     // Atualiza texto central
@@ -734,15 +793,15 @@ const OneVoice = (() => {
     _donutChart = new Chart(canvas, {
       type: 'doughnut',
       data: {
-        labels: hasPending ? ['Sem dados'] : ['Presenças', 'Faltas'],
+        labels: hasPending ? ['Sem dados'] : ['Presenças', 'Faltas', 'Justificadas'],
         datasets: [{
-          data: hasPending ? [1] : [totalP, totalF],
+          data: hasPending ? [1] : [totalP, totalF, totalFJ],
           backgroundColor: hasPending
             ? ['#E5E9EF']
-            : ['rgba(34,197,94,0.9)', 'rgba(239,68,68,0.85)'],
+            : ['rgba(34,197,94,0.9)', 'rgba(239,68,68,0.85)', 'rgba(37,99,235,0.85)'],
           borderColor: hasPending
             ? ['#D1D9E0']
-            : ['#16a34a', '#dc2626'],
+            : ['#16a34a', '#dc2626', '#1d4ed8'],
           borderWidth: 2,
           hoverOffset: 8,
         }],
@@ -820,14 +879,15 @@ const OneVoice = (() => {
    * @returns {{ totalFaltas, maxConsecutivas, desdeUltimaPresenca }}
    */
   function calcStudentMetrics(attendance, dates) {
-    // ⚠️ Filtra APENAS as datas que têm P ou F registrado.
+    // ⚠️ Filtra APENAS as datas que têm P, F ou FJ registrado.
     // Células vazias = aula futura ou ainda não registrada → ignoradas completamente.
     const markedDates = dates.filter(d => {
       const val = (attendance[d] || '').toUpperCase();
-      return val === 'P' || val === 'F';
+      return val === 'P' || val === 'F' || val === 'FJ';
     });
 
     let totalFaltas = 0;
+    let totalJustificadas = 0;
     let maxConsecutivas = 0;
     let currentConsec = 0;
     let lastPresencaIdx = -1; // índice (dentro de markedDates) da última presença
@@ -838,6 +898,9 @@ const OneVoice = (() => {
         totalFaltas++;
         currentConsec++;
         if (currentConsec > maxConsecutivas) maxConsecutivas = currentConsec;
+      } else if (val === 'FJ') {
+        totalJustificadas++;
+        currentConsec = 0;
       } else if (val === 'P') {
         currentConsec = 0;
         lastPresencaIdx = i;
@@ -849,7 +912,7 @@ const OneVoice = (() => {
       ? markedDates.length  // nunca compareceu em nenhuma aula registrada
       : markedDates.length - 1 - lastPresencaIdx;
 
-    return { totalFaltas, maxConsecutivas, desdeUltimaPresenca, totalAulasRegistradas: markedDates.length };
+    return { totalFaltas, totalJustificadas, maxConsecutivas, desdeUltimaPresenca, totalAulasRegistradas: markedDates.length };
   }
 
   /**

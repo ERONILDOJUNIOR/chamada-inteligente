@@ -64,19 +64,21 @@ router.post('/attendance', async (req, res) => {
   try {
     const { turma, rowIndex, dateIndex, value } = req.body;
 
-    if (!turma || rowIndex === undefined || dateIndex === undefined || !value) {
+    if (!turma || rowIndex === undefined || dateIndex === undefined || value === undefined) {
       return res.status(400).json({ success: false, error: 'Campos obrigatórios: turma, rowIndex, dateIndex, value' });
     }
 
-    if (!['P', 'F'].includes(value.toUpperCase())) {
-      return res.status(400).json({ success: false, error: 'Valor inválido. Use "P" ou "F".' });
+    const valStr = (value || '').toString().trim().toUpperCase();
+
+    if (valStr !== '' && !['P', 'F', 'FJ'].includes(valStr)) {
+      return res.status(400).json({ success: false, error: 'Valor inválido. Use "P", "F", "FJ" ou vazio para desmarcar.' });
     }
 
     const result = await oneService.updateOneAttendance(
       turma,
       Number(rowIndex),
       Number(dateIndex),
-      value.toUpperCase()
+      valStr
     );
 
     res.json(result);

@@ -259,7 +259,7 @@ async function getOneAttendance(turma) {
  * @param {'Turma 1'|'Turma 2'} turma
  * @param {number} rowIndex - linha 1-based na planilha
  * @param {number} dateIndex - índice da data (0-based dentro das datas)
- * @param {'P'|'F'} value
+ * @param {'P'|'F'|'FJ'|''} value
  */
 async function updateOneAttendance(turma, rowIndex, dateIndex, value) {
   const sheets = getSheetsClient();
